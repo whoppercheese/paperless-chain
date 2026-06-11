@@ -19,7 +19,7 @@ def _embed_timeout() -> httpx.Timeout:
 
 
 def _log_llm_request(model: str, system: str, user: str, temperature: float) -> None:
-    print("=== pAIperless LLM Request ===")
+    print("=== Paperless-chAIn LLM Request ===")
     print(f"model: {model}")
     print(f"temperature: {temperature}")
     print("--- system ---")
@@ -29,10 +29,10 @@ def _log_llm_request(model: str, system: str, user: str, temperature: float) -> 
 
 
 def _log_llm_response(raw_response: str, parsed: dict | None = None) -> None:
-    print("=== pAIperless LLM Response (raw) ===")
+    print("=== Paperless-chAIn LLM Response (raw) ===")
     print(raw_response)
     if parsed is not None:
-        print("=== pAIperless LLM Response (parsed) ===")
+        print("=== Paperless-chAIn LLM Response (parsed) ===")
         print(json.dumps(parsed, ensure_ascii=False, indent=2))
 
 

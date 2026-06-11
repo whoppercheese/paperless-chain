@@ -20,7 +20,7 @@ http: httpx.AsyncClient
 async def lifespan(app: FastAPI):
     global QDRANT_URL, QDRANT_COLLECTION, OLLAMA_URL, OLLAMA_EMBED_MODEL, PAPERLESS_URL, PAPERLESS_API_TOKEN, http
     QDRANT_URL = os.environ["QDRANT_URL"].rstrip("/")
-    QDRANT_COLLECTION = os.environ.get("QDRANT_COLLECTION", "paiperless_documents")
+    QDRANT_COLLECTION = os.environ.get("QDRANT_COLLECTION", "paperless_chain_documents")
     OLLAMA_URL = os.environ["OLLAMA_URL"].rstrip("/")
     OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "bge-m3")
     PAPERLESS_URL = os.environ.get("PAPERLESS_URL", "").rstrip("/")

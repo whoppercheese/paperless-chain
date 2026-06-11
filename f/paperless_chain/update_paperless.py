@@ -1,5 +1,20 @@
-from f.paiperless.shared.paperless_client import patch
-from f.paiperless.shared.text_utils import limit_words
+from f.paperless_chain.shared.paperless_client import patch
+from f.paperless_chain.shared.text_utils import FLOW_PROCESSED_TAG, is_system_tag, limit_words
+
+
+def _append_tag(
+    name: str,
+    tag_name_to_id: dict[str, int],
+    tag_ids: list[int],
+    known_tag_ids: set[int],
+) -> bool:
+    tag_id = tag_name_to_id.get(name.lower())
+    if tag_id is None:
+        return False
+    if tag_id not in known_tag_ids:
+        tag_ids.append(tag_id)
+        known_tag_ids.add(tag_id)
+    return True
 
 
 def main(
@@ -16,21 +31,30 @@ def main(
     warnings: list | None = None,
 ) -> dict:
     tag_name_to_id = {t["name"].lower(): t["id"] for t in existing_tags}
+    tag_id_to_name = {t["id"]: t["name"] for t in existing_tags}
     corr_name_to_id = {c["name"].lower(): c["id"] for c in existing_correspondents}
     dtype_name_to_id = {d["name"].lower(): d["id"] for d in existing_document_types}
     collected_warnings = list(warnings or [])
+    current_ids = list(current_tag_ids or [])
 
-    tag_ids: list[int] = list(current_tag_ids or [])
-    known_tag_ids = set(tag_ids)
+    tag_ids: list[int] = []
+    known_tag_ids: set[int] = set()
     applied_tag_names: list[str] = []
     for name in selected_tags:
+        if is_system_tag(name):
+            continue
         key = name.lower()
         if key in tag_name_to_id:
             tag_id = tag_name_to_id[key]
-            applied_tag_names.append(name)
+            applied_tag_names.append(tag_id_to_name[tag_id])
             if tag_id not in known_tag_ids:
                 tag_ids.append(tag_id)
                 known_tag_ids.add(tag_id)
+
+    if not _append_tag(FLOW_PROCESSED_TAG, tag_name_to_id, tag_ids, known_tag_ids):
+        collected_warnings.append(
+            f"System-Tag {FLOW_PROCESSED_TAG} existiert nicht in Paperless"
+        )
 
     correspondent_id = None
     correspondent_name = selected_correspondent
@@ -54,7 +78,7 @@ def main(
     cleaned_title = limit_words(title.strip())
     if cleaned_title:
         update_payload["title"] = cleaned_title
-    if tag_ids:
+    if set(tag_ids) != set(current_ids):
         update_payload["tags"] = list(dict.fromkeys(tag_ids))
     if correspondent_id is not None:
         update_payload["correspondent"] = correspondent_id
@@ -65,7 +89,7 @@ def main(
 
     if not update_payload:
         collected_warnings.append("Keine Metadaten-Änderungen, Paperless-Update übersprungen")
-        print("=== pAIperless Paperless Update (skipped) ===")
+        print("=== Paperless-chAIn Paperless Update (skipped) ===")
         print(f"doc_id: {doc_id}")
         print("reason: Keine Metadaten-Änderungen")
         return {

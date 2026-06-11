@@ -1,6 +1,6 @@
 summary: ''
 description: ''
-lock: '!inline f/paiperless/shared/text_utils.script.lock'
+lock: '!inline f/paperless_chain/shared/text_utils.script.lock'
 kind: script
 schema:
   $schema: https://json-schema.org/draft/2020-12/schema

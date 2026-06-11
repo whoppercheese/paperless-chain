@@ -1,4 +1,4 @@
-from f.paiperless.shared.paperless_client import add_document_tags
+from f.paperless_chain.shared.paperless_client import add_document_tags
 
 STATUS_TAG_WARNING = "AI-Warning"
 

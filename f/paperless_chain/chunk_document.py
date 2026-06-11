@@ -1,6 +1,6 @@
-from f.paiperless.shared.ollama_client import chat_json
-from f.paiperless.shared.prompts import CHUNK_SCHEMA, build_chunk_prompt
-from f.paiperless.shared.text_utils import language_name, normalize_language, section_label, summary_label
+from f.paperless_chain.shared.ollama_client import chat_json
+from f.paperless_chain.shared.prompts import CHUNK_SCHEMA, build_chunk_prompt
+from f.paperless_chain.shared.text_utils import language_name, normalize_language, section_label, summary_label
 
 
 def main(

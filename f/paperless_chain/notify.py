@@ -1,4 +1,5 @@
-from f.paiperless.shared.notify_client import notify
+from f.paperless_chain.shared.notify_client import notify
+from f.paperless_chain.shared.paperless_client import get_document_tag_names
 
 
 def _format_message(
@@ -9,7 +10,7 @@ def _format_message(
     warnings: list,
 ) -> str:
     lines = [
-        "pAIperless: Dokument verarbeitet",
+        "Paperless-chAIn: Dokument verarbeitet",
         f"Titel: {title}",
         f"Tags: {', '.join(tag_names) if tag_names else '–'}",
         f"Korrespondent: {correspondent_name or '–'}",
@@ -24,14 +25,14 @@ def _format_message(
 def main(
     doc_id: int,
     title: str,
-    tag_names: list | None = None,
     correspondent_name: str | None = None,
     document_type_name: str | None = None,
     warnings: list | None = None,
 ) -> dict:
+    tag_names = get_document_tag_names(doc_id)
     message = _format_message(
         title,
-        tag_names or [],
+        tag_names,
         correspondent_name,
         document_type_name,
         warnings or [],
@@ -40,6 +41,7 @@ def main(
 
     return {
         "doc_id": doc_id,
+        "tag_names": tag_names,
         "notified": mode != "log",
         "mode": mode,
         "message": message,

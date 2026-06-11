@@ -25,7 +25,7 @@ if ((${#missing[@]})); then
   exit 1
 fi
 
-echo "=== pAIperless: wmill sync push ==="
+echo "=== Paperless-chAIn: wmill sync push ==="
 echo "base-url:  $WMILL_BASE_URL"
 echo "workspace: $WMILL_WORKSPACE"
 echo

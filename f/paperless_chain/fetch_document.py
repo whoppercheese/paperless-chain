@@ -1,4 +1,4 @@
-from f.paiperless.shared.paperless_client import get, paginate
+from f.paperless_chain.shared.paperless_client import get, paginate
 
 
 def main(doc_id: int) -> dict:
@@ -12,7 +12,7 @@ def main(doc_id: int) -> dict:
 
     existing_tags = [{"id": t["id"], "name": t["name"]} for t in tags]
     tag_id_to_name = {t["id"]: t["name"] for t in existing_tags}
-    pre_selected_tag_names = [
+    current_tag_names = [
         tag_id_to_name[tid]
         for tid in document.get("tags", [])
         if tid in tag_id_to_name
@@ -26,7 +26,7 @@ def main(doc_id: int) -> dict:
         "existing_correspondents": [{"id": c["id"], "name": c["name"]} for c in correspondents],
         "existing_document_types": [{"id": d["id"], "name": d["name"]} for d in document_types],
         "added_date": (document.get("added") or "")[:10],
-        "pre_selected_tag_names": pre_selected_tag_names,
+        "current_tag_names": current_tag_names,
         "current_metadata": {
             "title": document.get("title"),
             "correspondent": document.get("correspondent"),

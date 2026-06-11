@@ -1,4 +1,4 @@
-from f.paiperless.shared.ollama_client import embed_texts
+from f.paperless_chain.shared.ollama_client import embed_texts
 
 
 def main(chunks: list) -> dict:

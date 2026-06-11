@@ -10,7 +10,7 @@ import uuid
 import httpx
 
 
-def send_hermes(message: str, event: str = "paiperless.document_processed", doc_id: int | None = None) -> None:
+def send_hermes(message: str, event: str = "paperless_chain.document_processed", doc_id: int | None = None) -> None:
     webhook_url = os.environ.get("HERMES_WEBHOOK_URL", "")
     secret = os.environ.get("HERMES_WEBHOOK_SECRET", "")
     if not webhook_url or not secret:
@@ -44,7 +44,7 @@ def send_matrix(message: str) -> None:
         r.raise_for_status()
 
 
-def notify(message: str, event: str = "paiperless.document_processed", doc_id: int | None = None) -> str:
+def notify(message: str, event: str = "paperless_chain.document_processed", doc_id: int | None = None) -> str:
     mode = os.environ.get("NOTIFY_MODE", "log").lower()
     if mode == "hermes":
         send_hermes(message, event=event, doc_id=doc_id)

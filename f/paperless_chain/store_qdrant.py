@@ -32,13 +32,13 @@ def main(embedded_chunks: list) -> dict:
         return {"stored": 0, "doc_id": None}
 
     base = os.environ["QDRANT_URL"].rstrip("/")
-    collection = os.environ.get("QDRANT_COLLECTION", "paiperless_documents")
+    collection = os.environ.get("QDRANT_COLLECTION", "paperless_chain_documents")
     doc_id = embedded_chunks[0]["payload"]["doc_id"]
 
     points = []
     for item in embedded_chunks:
         p = item["payload"]
-        point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"paiperless:{p['doc_id']}:{p['chunk_index']}"))
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"paperless_chain:{p['doc_id']}:{p['chunk_index']}"))
         points.append({
             "id": point_id,
             "vector": item["vector"],

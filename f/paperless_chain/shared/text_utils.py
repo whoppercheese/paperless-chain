@@ -40,6 +40,19 @@ SECTION_LABELS: dict[str, str] = {
 
 DEFAULT_TITLE_MAX_WORDS = 12
 
+SYSTEM_TAG_NAMES: frozenset[str] = frozenset({"ai-warning", "ai-error", "ai-processed"})
+FLOW_PROCESSED_TAG = "AI-Processed"
+
+
+def is_system_tag(name: str | None) -> bool:
+    if not name:
+        return False
+    return name.strip().lower() in SYSTEM_TAG_NAMES
+
+
+def content_tag_names(names: list[str] | None) -> list[str]:
+    return [name for name in (names or []) if not is_system_tag(name)]
+
 
 def normalize_language(code: str | None) -> str:
     if not code or not str(code).strip():

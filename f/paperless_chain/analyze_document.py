@@ -1,6 +1,12 @@
-from f.paiperless.shared.ollama_client import chat_json
-from f.paiperless.shared.prompts import ANALYZE_SCHEMA, build_analyze_prompt
-from f.paiperless.shared.text_utils import language_name, limit_words, normalize_language
+from f.paperless_chain.shared.ollama_client import chat_json
+from f.paperless_chain.shared.prompts import ANALYZE_SCHEMA, build_analyze_prompt
+from f.paperless_chain.shared.text_utils import (
+    content_tag_names,
+    is_system_tag,
+    language_name,
+    limit_words,
+    normalize_language,
+)
 
 
 def _resolve_existing_name(name: str | None, name_to_canonical: dict[str, str]) -> str | None:
@@ -16,7 +22,7 @@ def main(
     existing_tags: list,
     existing_correspondents: list,
     added_date: str = "",
-    pre_selected_tag_names: list | None = None,
+    current_tag_names: list | None = None,
     document_language: str = "de",
     summarize_warnings: list | None = None,
 ) -> dict:
@@ -27,10 +33,12 @@ def main(
     corr_name_to_canonical = {c["name"].lower(): c["name"] for c in existing_correspondents}
 
     type_names = list(type_name_to_canonical.values())
-    tag_names = list(tag_name_to_canonical.values())
+    tag_names = [
+        name for name in tag_name_to_canonical.values() if not is_system_tag(name)
+    ]
     corr_names = list(corr_name_to_canonical.values())
 
-    pre_selected = [t for t in (pre_selected_tag_names or []) if t.lower() != "eingang"]
+    current_tags = content_tag_names(current_tag_names)
 
     user = f"Dokument-ID: {doc_id}\n\nSummary:\n{summary.strip()}"
     result = chat_json(
@@ -39,7 +47,7 @@ def main(
             type_names,
             tag_names,
             corr_names,
-            pre_selected_tags=pre_selected,
+            current_tags=current_tags,
         ),
         user,
         format_schema=ANALYZE_SCHEMA,
@@ -51,13 +59,15 @@ def main(
     if not summary.strip():
         warnings.append("Keine Zusammenfassung vorhanden, Metadaten-Extraktion eingeschränkt")
 
-    raw_tags = [t for t in (result.get("selected_tags") or []) if t.lower() != "eingang"]
+    raw_tags = list(result.get("selected_tags") or [])
     selected_tags: list[str] = []
     for name in raw_tags:
+        if is_system_tag(name):
+            continue
         canonical = _resolve_existing_name(name, tag_name_to_canonical)
         if canonical and canonical not in selected_tags:
             selected_tags.append(canonical)
-    if not selected_tags and not pre_selected:
+    if not selected_tags and not current_tags:
         warnings.append("Keine passenden Tags gefunden")
 
     raw_document_type = result.get("selected_document_type")

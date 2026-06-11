@@ -9,13 +9,13 @@ value:
     summary: Parse Paperless doc_url
     value:
       type: script
-      path: f/paiperless/preprocess_webhook
+      path: f/paperless_chain/preprocess_webhook
   failure_module:
     id: failure
     summary: Notify on flow error and tag AI-Error
     value:
       type: script
-      path: f/paiperless/handle_flow_failure
+      path: f/paperless_chain/handle_flow_failure
       input_transforms:
         error:
           type: javascript
@@ -28,7 +28,7 @@ value:
       summary: Fetch document from Paperless
       value:
         type: script
-        path: f/paiperless/fetch_document
+        path: f/paperless_chain/fetch_document
         input_transforms:
           doc_id:
             type: javascript
@@ -37,7 +37,7 @@ value:
       summary: Summarize document and extract date with LLM
       value:
         type: script
-        path: f/paiperless/summarize_document
+        path: f/paperless_chain/summarize_document
         input_transforms:
           doc_id:
             type: javascript
@@ -48,11 +48,14 @@ value:
           document_language:
             type: javascript
             expr: results.fetch.document_language
+          added_date:
+            type: javascript
+            expr: results.fetch.added_date
     - id: analyze
       summary: Extract metadata from document summary
       value:
         type: script
-        path: f/paiperless/analyze_document
+        path: f/paperless_chain/analyze_document
         input_transforms:
           doc_id:
             type: javascript
@@ -72,9 +75,9 @@ value:
           added_date:
             type: javascript
             expr: results.fetch.added_date
-          pre_selected_tag_names:
+          current_tag_names:
             type: javascript
-            expr: results.fetch.pre_selected_tag_names
+            expr: results.fetch.current_tag_names
           document_language:
             type: javascript
             expr: results.fetch.document_language
@@ -85,7 +88,7 @@ value:
       summary: Update Paperless metadata
       value:
         type: script
-        path: f/paiperless/update_paperless
+        path: f/paperless_chain/update_paperless
         input_transforms:
           doc_id:
             type: javascript
@@ -124,7 +127,7 @@ value:
       summary: LLM semantic chunking
       value:
         type: script
-        path: f/paiperless/chunk_document
+        path: f/paperless_chain/chunk_document
         input_transforms:
           doc_id:
             type: javascript
@@ -151,7 +154,7 @@ value:
       summary: Generate embeddings
       value:
         type: script
-        path: f/paiperless/generate_embeddings
+        path: f/paperless_chain/generate_embeddings
         input_transforms:
           chunks:
             type: javascript
@@ -160,7 +163,7 @@ value:
       summary: Store vectors in Qdrant
       value:
         type: script
-        path: f/paiperless/store_qdrant
+        path: f/paperless_chain/store_qdrant
         input_transforms:
           embedded_chunks:
             type: javascript
@@ -169,7 +172,7 @@ value:
       summary: Apply AI-Warning tag when processing had warnings
       value:
         type: script
-        path: f/paiperless/apply_status_tags
+        path: f/paperless_chain/apply_status_tags
         input_transforms:
           doc_id:
             type: javascript
@@ -190,7 +193,7 @@ value:
       summary: Send warnings and status
       value:
         type: script
-        path: f/paiperless/notify
+        path: f/paperless_chain/notify
         input_transforms:
           doc_id:
             type: javascript
@@ -198,9 +201,6 @@ value:
           title:
             type: javascript
             expr: results.update.title
-          tag_names:
-            type: javascript
-            expr: results.update.tag_names
           correspondent_name:
             type: javascript
             expr: results.update.correspondent_name

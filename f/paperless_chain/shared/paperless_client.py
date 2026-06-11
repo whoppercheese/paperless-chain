@@ -30,14 +30,14 @@ def post(path: str, payload: dict) -> dict:
 
 
 def _log_patch_request(path: str, payload: dict) -> None:
-    print("=== pAIperless Paperless PATCH ===")
+    print("=== Paperless-chAIn Paperless PATCH ===")
     print(f"url: {_base_url()}{path}")
     print("--- payload ---")
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 def _log_patch_response(response: dict) -> None:
-    print("=== pAIperless Paperless PATCH Response ===")
+    print("=== Paperless-chAIn Paperless PATCH Response ===")
     print(json.dumps(response, ensure_ascii=False, indent=2))
 
 
@@ -61,6 +61,16 @@ def paginate(path: str) -> list[dict]:
             break
         page += 1
     return results
+
+
+def get_document_tag_names(doc_id: int) -> list[str]:
+    document = get(f"/api/documents/{doc_id}/")
+    tag_id_to_name = {t["id"]: t["name"] for t in paginate("/api/tags/")}
+    return [
+        tag_id_to_name[tag_id]
+        for tag_id in document.get("tags", [])
+        if tag_id in tag_id_to_name
+    ]
 
 
 def add_document_tags(doc_id: int, tag_names: list[str]) -> dict:
@@ -98,7 +108,7 @@ def add_document_tags(doc_id: int, tag_names: list[str]) -> dict:
         updated = patch(f"/api/documents/{doc_id}/", {"tags": tag_ids})
 
     if missing_names:
-        print(f"=== pAIperless Paperless Tags (missing) ===")
+        print(f"=== Paperless-chAIn Paperless Tags (missing) ===")
         print(f"doc_id: {doc_id}")
         print(f"missing tag names: {missing_names}")
 

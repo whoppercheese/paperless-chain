@@ -19,7 +19,7 @@ schema:
     added_date:
       type: string
       default: ''
-    pre_selected_tag_names:
+    current_tag_names:
       type: array
       nullable: true
     document_language:

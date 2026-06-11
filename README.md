@@ -1,4 +1,4 @@
-# pAIperless
+# Paperless-chAIn
 
 AI-Erweiterung für [Paperless-ngx](https://github.com/paperless-ngx/paperless-ngx): automatische Metadaten-Generierung, semantisches Chunking und Vektor-Speicherung in Qdrant — orchestriert mit [Windmill](https://www.windmill.dev/).
 
@@ -31,9 +31,9 @@ flowchart LR
 |---------|--------|--------------|
 | Preprocessor | `preprocess_webhook` | Parst `doc_url` aus dem Paperless-Webhook → `doc_id` |
 | fetch | `fetch_document` | OCR-Text, Sprache, bestehende Tags/Typen/Korrespondenten aus Paperless |
-| summarize | `summarize_document` | **LLM-Call 1:** Summary + `document_date` aus Volltext |
+| summarize | `summarize_document` | **LLM-Call 1:** Summary + `document_date` aus Volltext (Fallback: Paperless-Hinzufügedatum) |
 | analyze | `analyze_document` | **LLM-Call 2:** Titel, Typ, Korrespondent, Tags aus Summary (schnell) |
-| update | `update_paperless` | PATCH an Paperless; behält bestehende Tag-IDs, ergänzt LLM-Tags |
+| update | `update_paperless` | PATCH an Paperless; setzt Inhalts-Tags nach LLM + immer `AI-Processed` |
 | chunk | `chunk_document` | **LLM-Call 3:** semantische Chunks aus Volltext + Summary-Chunk fürs Embedding |
 | embed | `generate_embeddings` | Vektoren via Ollama/bge-m3 |
 | store | `store_qdrant` | Upsert in Qdrant |
@@ -49,7 +49,8 @@ Paperless-Workflow-Trigger: **Document Added** (nach OCR und automatischem Match
 - **Trigger**: Paperless-ngx Webhook bei neuem Dokument (`Document Added`)
 - **Drei LLM-Calls**: Summary+Datum (Volltext), Metadaten (Summary), Chunking (Volltext)
 - **Metadaten**: Titel, Tags, Korrespondent, Dokumenttyp, `created_date` — nur aus bestehenden Paperless-Listen
-- **Vorgewählte Tags**: bereits am Dokument gesetzte Tags (Paperless-Matching) werden im Prompt beibehalten
+- **Tag-Bereinigung**: bestehende Inhalts-Tags werden vom LLM geprüft; unpassende können entfernt, passende ergänzt werden
+- **System-Tags**: `AI-Warning`, `AI-Error`, `AI-Processed` werden vom LLM ignoriert; `AI-Processed` setzt der Flow bei jedem Update
 - **LLM-Chunking**: semantische Teil-Chunks plus separates Summary-Embedding
 - **Embeddings**: Ollama/bge-m3 (1024 Dimensionen) in Qdrant
 - **Status-Tags**: **AI-Warning** bei Warnings, **AI-Error** bei Flow-Fehler (Tags müssen in Paperless existieren)
@@ -62,7 +63,7 @@ Paperless-Workflow-Trigger: **Document Added** (nach OCR und automatischem Match
 - Paperless-ngx (läuft bereits)
 - Ollama mit konfiguriertem LLM (z. B. `qwen2.5:7b`, `qwen3`) und `bge-m3`
 - Optional: Hermes Agent oder Matrix für Benachrichtigungen
-- In Paperless: Tags **AI-Warning** und **AI-Error** anlegen (für Status-Markierung)
+- In Paperless: Tags **AI-Warning**, **AI-Error** und **AI-Processed** anlegen
 
 ## Getting Started
 
@@ -98,8 +99,9 @@ In `.env` mindestens setzen:
 
 **Paperless API-Token:** In Paperless unter **Settings → API Tokens** anlegen, Berechtigung zum Lesen/Schreiben von Dokumenten.
 
-**Status-Tags in Paperless anlegen** (exakte Namen):
+**System-Tags in Paperless anlegen** (exakte Namen):
 
+- `AI-Processed` — wird bei jedem erfolgreichen Update durch den Flow gesetzt
 - `AI-Warning` — wird bei erfolgreicher Verarbeitung mit Warnings gesetzt
 - `AI-Error` — wird bei Flow-Fehlern gesetzt
 
@@ -199,20 +201,20 @@ wmill sync push \
 **Optional (wiederholtes Deployen):** Workspace einmal lokal registrieren, danach reicht `wmill sync push --yes` (mit gespeichertem Profil, ohne Args):
 
 ```bash
-wmill workspace add paiperless main http://localhost:8000
+wmill workspace add paperless_chain main http://localhost:8000
 # fragt interaktiv nach dem Token
 
 wmill sync push --yes
 ```
 
-Das lädt alle Scripts unter `f/paiperless/` und den Flow `f/paiperless/process_document` in den Workspace.
+Das lädt alle Scripts unter `f/paperless_chain/` und den Flow `f/paperless_chain/process_document` in den Workspace.
 
-**Prüfen in der UI:** **Flows → `f/paiperless/process_document`** sollte sichtbar sein; unter **Scripts** die einzelnen Schritte (`fetch_document`, `summarize_document`, …).
+**Prüfen in der UI:** **Flows → `f/paperless_chain/process_document`** sollte sichtbar sein; unter **Scripts** die einzelnen Schritte (`fetch_document`, `summarize_document`, …).
 
 #### 3.4 Flow testen (ohne Paperless)
 
 ```bash
-wmill flow run f/paiperless/process_document \
+wmill flow run f/paperless_chain/process_document \
   --base-url "$WMILL_BASE_URL" \
   --workspace "$WMILL_WORKSPACE" \
   --token "$WMILL_TOKEN" \
@@ -231,7 +233,7 @@ In Paperless unter **Settings → Workflows** einen neuen Workflow anlegen:
 
 | Feld | Wert |
 |------|------|
-| Name | pAIperless Auto-Process |
+| Name | Paperless-chAIn Auto-Process |
 | Trigger | **Document Added** |
 | Action | **Webhook** |
 | Method | POST |
@@ -242,13 +244,13 @@ In Paperless unter **Settings → Workflows** einen neuen Workflow anlegen:
 **Webhook-URL** (Platzhalter ersetzen):
 
 ```
-http://<windmill-host>:<WINDMILL_PORT>/api/w/<workspace>/jobs/run/f/paiperless/process_document?token=<API-TOKEN>
+http://<windmill-host>:<WINDMILL_PORT>/api/w/<workspace>/jobs/run/f/paperless_chain/process_document?token=<API-TOKEN>
 ```
 
 Beispiel lokal, Workspace `main`, Port `8000`:
 
 ```
-http://localhost:8000/api/w/main/jobs/run/f/paiperless/process_document?token=wm_xxxxxxxx
+http://localhost:8000/api/w/main/jobs/run/f/paperless_chain/process_document?token=wm_xxxxxxxx
 ```
 
 **Netzwerk:** Paperless muss Windmill unter dieser URL erreichen können. Läuft Paperless in Docker und Windmill auf dem Host (oder umgekehrt), `localhost` funktioniert **nicht** — stattdessen Host-IP, Docker-Bridge-IP oder `host.docker.internal` (Linux/WSL je nach Setup).
@@ -259,7 +261,7 @@ http://localhost:8000/api/w/main/jobs/run/f/paiperless/process_document?token=wm
 
 ```bash
 curl -X POST \
-  'http://localhost:8000/api/w/main/jobs/run/f/paiperless/process_document?token=DEIN_TOKEN' \
+  'http://localhost:8000/api/w/main/jobs/run/f/paperless_chain/process_document?token=DEIN_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"doc_url": "http://paperless/documents/42/"}'
 ```
@@ -271,7 +273,7 @@ Die `doc_url` muss nicht erreichbar sein — nur die Dokument-ID im Pfad zählt.
 - [ ] Node.js ≥ 20 + `windmill-cli` installiert (`wmill --version`)
 - [ ] `.env` mit `WMILL_*`, `PAPERLESS_*`, `OLLAMA_*` gesetzt; Worker neu gestartet falls nötig
 - [ ] Ollama-Modelle gepullt
-- [ ] Tags `AI-Warning` und `AI-Error` in Paperless angelegt
+- [ ] Tags `AI-Processed`, `AI-Warning` und `AI-Error` in Paperless angelegt
 - [ ] Windmill Admin + Workspace erstellt, API-Token in `WMILL_TOKEN`
 - [ ] `./wmill-sync.sh` erfolgreich
 - [ ] Flow-Test mit `wmill flow run …` oder curl-Webhook OK
@@ -293,7 +295,7 @@ Port konfigurierbar via `SEARCH_PORT` in `.env` (Standard: `8888`).
 ## Projektstruktur
 
 ```
-f/paiperless/
+f/paperless_chain/
 ├── process_document.flow/   # Haupt-Flow
 ├── preprocess_webhook.py      # Webhook-Preprocessor (doc_url → doc_id)
 ├── fetch_document.py
@@ -356,28 +358,28 @@ Voraussetzungen:
 **1. Webhook-Route anlegen** (auf dem Hermes-Host):
 
 ```bash
-hermes webhook subscribe paiperless \
+hermes webhook subscribe paperless-chain \
   --deliver matrix \
   --deliver-only \
   --prompt "{message}" \
-  --description "pAIperless Dokumenten-Benachrichtigungen"
+  --description "Paperless-chAIn Dokumenten-Benachrichtigungen"
 ```
 
 Der Befehl gibt **URL** und **Secret** aus. Beispiel-URL:
-`http://192.168.178.158:8644/webhooks/paiperless`
+`http://192.168.178.158:8644/webhooks/paperless-chain`
 
 **2. In `.env` eintragen:**
 
 ```bash
 NOTIFY_MODE=hermes
-HERMES_WEBHOOK_URL=http://192.168.178.158:8644/webhooks/paiperless
+HERMES_WEBHOOK_URL=http://192.168.178.158:8644/webhooks/paperless-chain
 HERMES_WEBHOOK_SECRET=<secret-aus-dem-subscribe-befehl>
 ```
 
 **3. Testen:**
 
 ```bash
-hermes webhook test paiperless --payload '{"message":"Test von pAIperless","doc_id":1,"event":"paiperless.document_processed"}'
+hermes webhook test paperless-chain --payload '{"message":"Test von Paperless-chAIn","doc_id":1,"event":"paperless_chain.document_processed"}'
 ```
 
 Windmill-Worker nach `.env`-Änderung neu starten: `docker compose up -d windmill-worker`
@@ -392,17 +394,17 @@ Windmill-Worker nach `.env`-Änderung neu starten: `docker compose up -d windmil
 Einzelne Scripts in Windmill manuell testen (mit denselben `--base-url`, `--workspace`, `--token` wie beim Deploy):
 
 ```bash
-wmill script run f/paiperless/fetch_document \
+wmill script run f/paperless_chain/fetch_document \
   --base-url "$WMILL_BASE_URL" \
   --workspace "$WMILL_WORKSPACE" \
   --token "$WMILL_TOKEN" \
   -d '{"doc_id": 1}'
 
-wmill flow run f/paiperless/process_document \
+wmill flow run f/paperless_chain/process_document \
   --base-url "$WMILL_BASE_URL" \
   --workspace "$WMILL_WORKSPACE" \
   --token "$WMILL_TOKEN" \
   -d '{"doc_id": 1}'
 ```
 
-LLM-Requests und Paperless-PATCHs werden im Windmill-Worker-Log ausgegeben (`=== pAIperless LLM Request ===`, `=== pAIperless Paperless PATCH ===`).
+LLM-Requests und Paperless-PATCHs werden im Windmill-Worker-Log ausgegeben (`=== Paperless-chAIn LLM Request ===`, `=== Paperless-chAIn Paperless PATCH ===`).

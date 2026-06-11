@@ -1,5 +1,5 @@
-from f.paiperless.shared.notify_client import notify
-from f.paiperless.shared.paperless_client import add_document_tags
+from f.paperless_chain.shared.notify_client import notify
+from f.paperless_chain.shared.paperless_client import add_document_tags
 
 STATUS_TAG_ERROR = "AI-Error"
 
@@ -16,7 +16,7 @@ def main(error: dict | None = None, doc_id: int | None = None) -> dict:
     stack = error.get("stack", "")
 
     lines = [
-        "pAIperless: Flow fehlgeschlagen!",
+        "Paperless-chAIn: Flow fehlgeschlagen!",
         f"Step: {step_id}",
         f"Fehler: {name}",
         f"Details: {message_text}",
@@ -32,11 +32,11 @@ def main(error: dict | None = None, doc_id: int | None = None) -> dict:
         try:
             tag_result = add_document_tags(doc_id, [STATUS_TAG_ERROR])
         except Exception as exc:
-            print(f"=== pAIperless Paperless Tags (error) ===")
+            print(f"=== Paperless-chAIn Paperless Tags (error) ===")
             print(f"doc_id: {doc_id}")
             print(f"failed to apply {STATUS_TAG_ERROR}: {exc}")
 
-    mode = notify(notification, event="paiperless.flow_error", doc_id=doc_id)
+    mode = notify(notification, event="paperless_chain.flow_error", doc_id=doc_id)
 
     return {
         "doc_id": doc_id,

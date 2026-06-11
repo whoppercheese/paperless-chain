@@ -1,5 +1,5 @@
 summary: Update Paperless document metadata
-description: Patches document metadata in Paperless using only existing tags, correspondents and document types.
+description: Patches document metadata in Paperless. Sets content tags from LLM and always applies AI-Processed.
 lock: ''
 kind: script
 schema:

@@ -13,6 +13,9 @@ schema:
     document_language:
       type: string
       default: de
+    added_date:
+      type: string
+      default: ''
   required:
     - doc_id
     - text

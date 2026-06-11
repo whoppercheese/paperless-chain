@@ -10,8 +10,6 @@ schema:
       type: integer
     title:
       type: string
-    tag_names:
-      type: array
     correspondent_name:
       type: string
     document_type_name:

@@ -34,22 +34,22 @@ def build_analyze_prompt(
     document_types: list[str],
     tags: list[str],
     correspondents: list[str],
-    pre_selected_tags: list[str] | None = None,
+    current_tags: list[str] | None = None,
 ) -> str:
     lang = document_language
     types_json = json.dumps(document_types, ensure_ascii=False)
     tags_json = json.dumps(tags, ensure_ascii=False)
     correspondents_json = json.dumps(correspondents, ensure_ascii=False)
-    pre_selected = [t for t in (pre_selected_tags or []) if t.lower() != "eingang"]
-    pre_selected_block = (
-        f"VORGEWÄHLTE TAGS (von Paperless, bereits am Dokument — PFLICHT beibehalten):\n"
-        f"{json.dumps(pre_selected, ensure_ascii=False)}\n"
-        f"- Diese Tags wurden von Paperless bereits nach Regeln zugewiesen\n"
-        f"- ALLE VORGEWÄHLTE TAGS MÜSSEN in selected_tags enthalten sein\n"
-        f"- Entferne einen vorgewählten Tag NUR bei extremer, eindeutiger Fehlzuordnung "
-        f"(z.B. völlig falscher Absender, klar falsches Thema) — im Zweifel BEHALTEN\n"
-        f"- Du darfst zusätzliche passende Tags aus VORHANDENE TAGS ergänzen\n\n"
-        if pre_selected
+    current = list(current_tags or [])
+    current_tags_block = (
+        f"AKTUELLE TAGS (bereits am Dokument — prüfen und bereinigen):\n"
+        f"{json.dumps(current, ensure_ascii=False)}\n"
+        f"- Prüfe jeden aktuellen Tag anhand der Summary\n"
+        f"- Behalte passende Tags in selected_tags\n"
+        f"- Entferne unpassende oder falsch zugewiesene Tags (nicht in selected_tags aufnehmen)\n"
+        f"- Ergänze bei Bedarf weitere passende Tags aus VORHANDENE TAGS\n"
+        f"- Bewerte nur Tags aus dieser Liste; erfinde keine neuen Namen\n\n"
+        if current
         else ""
     )
     return f"""\
@@ -72,7 +72,7 @@ VORHANDENE KORRESPONDENTEN (NUR diese exakten Namen verwenden):
 VORHANDENE TAGS (NUR diese exakten Namen verwenden):
 {tags_json}
 
-{pre_selected_block}SCHRITT 1: TITEL
+{current_tags_block}SCHRITT 1: TITEL
 Leite aus der Summary einen Titel ab.
 - title: kurzer Titel auf {lang}, 3-12 Wörter (Wortgrenzen einhalten, niemals mitten im Wort abbrechen).
   Enthalte Absender (Kurzname), Dokumentart und Datum/Zeitraum.
@@ -95,15 +95,15 @@ Regeln:
 - Rechtsformen (GmbH, AG etc.), Titel (Dr., Prof.), Groß-/Kleinschreibung und Umlaute sind beim Vergleich irrelevant
 
 SCHRITT 4: TAGS
-Wähle passende Tags aus der obigen Tag-Liste.
-- selected_tags: Liste, NUR exakte Namen aus VORHANDENE TAGS
+Lege die finale Tag-Liste für das Dokument fest.
+- selected_tags: Liste, NUR exakte Namen aus VORHANDENE TAGS — das ist die vollständige Ziel-Liste
 Regeln:
 - NUR Namen aus VORHANDENE TAGS verwenden, NIEMALS neue Tags erfinden oder vorschlagen
-- Wenn VORGEWÄHLTE TAGS existieren: diese IMMER in selected_tags aufnehmen; nur bei extremer Sicherheit einen einzelnen weglassen
-- Im Zweifel lieber einen vorgewählten Tag behalten als fälschlich entfernen
-- Ergänze bei Bedarf weitere passende Tags aus VORHANDENE TAGS (typisch 1-5 zusätzlich, keine Obergrenze wenn vorgewählt)
-- Ohne VORGEWÄHLTE TAGS: 1-5 Tags wählen; leere Liste nur wenn wirklich kein vorhandener Tag passt
-- NIEMALS den Tag "Eingang" in selected_tags aufnehmen
+- Wenn AKTUELLE TAGS existieren: jeden einzeln prüfen; unpassende Tags weglassen, passende behalten
+- Entferne Tags die thematisch nicht zum Dokument passen (z.B. falscher Absender, falsches Thema, veraltete Zuordnung)
+- Ergänze bei Bedarf weitere passende Tags aus VORHANDENE TAGS (typisch 1-5)
+- Ohne AKTUELLE TAGS: 1-5 passende Tags wählen; leere Liste nur wenn wirklich kein vorhandener Tag passt
+- NIEMALS System-Tags vergeben oder in selected_tags aufnehmen: AI-Warning, AI-Error, AI-Processed
 - Keine redundanten Tags (nicht mehrere für dasselbe Konzept)
 - Vorhandene Personen-Tags wählen wenn Person im Dokument vorkommt
 - Keine zu generischen ("Dokument") oder zu spezifischen ("Rechnung-2024-März") Tags
@@ -114,7 +114,7 @@ Sammle alle Warnings in einer einzigen Liste.
 Erzeuge eine Warning für JEDE der folgenden Situationen:
 - selected_document_type ist null: "Kein passender Dokumenttyp gefunden"
 - selected_correspondent ist null: "Kein passender Korrespondent gefunden"
-- selected_tags ist leer UND es gibt keine VORGEWÄHLTE TAGS: "Keine passenden Tags gefunden"
+- selected_tags ist leer UND es gibt keine passenden AKTUELLE TAGS: "Keine passenden Tags gefunden"
 
 JSON-AUSGABEFORMAT - verwende exakt diese Top-Level-Feldnamen (keine verschachtelten Schritte):
 title, selected_document_type, selected_correspondent, selected_tags, warnings
