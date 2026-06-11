@@ -1,5 +1,5 @@
 summary: Webhook preprocessor for Paperless doc_url
-description: Extracts doc_id from Paperless webhook payload.
+description: Extracts doc_id from Paperless webhook payload (doc_url) or direct doc_id.
 lock: ''
 kind: preprocessor
 schema:

@@ -22,6 +22,9 @@ schema:
     current_tag_names:
       type: array
       nullable: true
+    current_correspondent_id:
+      type: integer
+      nullable: true
     document_language:
       type: string
       default: de

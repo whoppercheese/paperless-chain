@@ -1,0 +1,28 @@
+summary: Queue Paperless documents by tag for AI processing
+description: >-
+  Finds all documents in Paperless with the given tag and starts up to `limit`
+  process_document flow jobs in Windmill (default 10). Documents that also have
+  any `skip_tag_names` are skipped (default: AI-Processed). Oldest documents first.
+lock: ''
+kind: script
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  properties:
+    tag_name:
+      type: string
+      description: Paperless tag name — all matching documents are candidates
+    limit:
+      type: integer
+      description: Maximum number of process_document jobs to queue
+      default: 10
+      minimum: 1
+    skip_tag_names:
+      type: array
+      items:
+        type: string
+      description: Skip documents that already have any of these tags
+      default:
+        - AI-Processed
+  required:
+    - tag_name

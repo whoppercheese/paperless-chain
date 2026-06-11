@@ -23,6 +23,7 @@ def main(
     existing_correspondents: list,
     added_date: str = "",
     current_tag_names: list | None = None,
+    current_correspondent_id: int | None = None,
     document_language: str = "de",
     summarize_warnings: list | None = None,
 ) -> dict:
@@ -31,6 +32,7 @@ def main(
     type_name_to_canonical = {d["name"].lower(): d["name"] for d in existing_document_types}
     tag_name_to_canonical = {t["name"].lower(): t["name"] for t in existing_tags}
     corr_name_to_canonical = {c["name"].lower(): c["name"] for c in existing_correspondents}
+    corr_id_to_name = {c["id"]: c["name"] for c in existing_correspondents}
 
     type_names = list(type_name_to_canonical.values())
     tag_names = [
@@ -77,6 +79,12 @@ def main(
 
     raw_correspondent = result.get("selected_correspondent")
     selected_correspondent = _resolve_existing_name(raw_correspondent, corr_name_to_canonical)
+    if not selected_correspondent and current_correspondent_id:
+        selected_correspondent = corr_id_to_name.get(current_correspondent_id)
+        if selected_correspondent:
+            warnings.append(
+                "Kein passender Korrespondent gefunden, Paperless-Vorschlag übernommen"
+            )
     if not selected_correspondent:
         warnings.append("Kein passender Korrespondent gefunden")
 

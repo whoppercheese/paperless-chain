@@ -244,13 +244,13 @@ In Paperless unter **Settings → Workflows** einen neuen Workflow anlegen:
 **Webhook-URL** (Platzhalter ersetzen):
 
 ```
-http://<windmill-host>:<WINDMILL_PORT>/api/w/<workspace>/jobs/run/f/paperless_chain/process_document?token=<API-TOKEN>
+http://<windmill-host>:<WINDMILL_PORT>/api/w/<workspace>/jobs/run/f/f/paperless_chain/process_document?token=<API-TOKEN>
 ```
 
 Beispiel lokal, Workspace `main`, Port `8000`:
 
 ```
-http://localhost:8000/api/w/main/jobs/run/f/paperless_chain/process_document?token=wm_xxxxxxxx
+http://localhost:8000/api/w/main/jobs/run/f/f/paperless_chain/process_document?token=wm_xxxxxxxx
 ```
 
 **Netzwerk:** Paperless muss Windmill unter dieser URL erreichen können. Läuft Paperless in Docker und Windmill auf dem Host (oder umgekehrt), `localhost` funktioniert **nicht** — stattdessen Host-IP, Docker-Bridge-IP oder `host.docker.internal` (Linux/WSL je nach Setup).
@@ -261,7 +261,7 @@ http://localhost:8000/api/w/main/jobs/run/f/paperless_chain/process_document?tok
 
 ```bash
 curl -X POST \
-  'http://localhost:8000/api/w/main/jobs/run/f/paperless_chain/process_document?token=DEIN_TOKEN' \
+  'http://localhost:8000/api/w/main/jobs/run/f/f/paperless_chain/process_document?token=DEIN_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"doc_url": "http://paperless/documents/42/"}'
 ```

@@ -78,6 +78,9 @@ value:
           current_tag_names:
             type: javascript
             expr: results.fetch.current_tag_names
+          current_correspondent_id:
+            type: javascript
+            expr: results.fetch.current_metadata.correspondent
           document_language:
             type: javascript
             expr: results.fetch.document_language
