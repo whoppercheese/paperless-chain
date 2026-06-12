@@ -1,32 +1,32 @@
 # Search UI
 
-Semantische Suche über in Qdrant gespeicherte Dokument-Chunks.
+Semantic search across document chunks stored in Qdrant.
 
-**URL:** `http://localhost:8888` (Port via `SEARCH_PORT` in `.env`)
+**URL:** `http://localhost:8888` (port via `SEARCH_PORT` in `.env`)
 
-## Funktion
+## How it works
 
-1. Suchanfrage wird via Ollama/bge-m3 in einen Embedding-Vektor umgewandelt
-2. Qdrant liefert die ähnlichsten Chunks
-3. Treffer werden nach Dokument gruppiert
-4. Links führen direkt zum Paperless-Dokument
+1. The search query is converted to an embedding vector via Ollama/bge-m3
+2. Qdrant returns the most similar chunks
+3. Results are grouped by document
+4. Links go directly to the Paperless document
 
-## Filter
+## Filters
 
-- Korrespondent
+- Correspondent
 - Tag
-- Chunk-Typ: Summary oder Teil-Chunks
+- Chunk type: summary or partial chunks
 
-Filterwerte werden aus der Qdrant-Collection gelesen (scroll über Payload-Felder).
+Filter values are read from the Qdrant collection (scroll over payload fields).
 
-## Voraussetzungen
+## Prerequisites
 
-- Mindestens ein Dokument durch `process_document` oder `embed_document` verarbeitet
-- Search-Container läuft (`docker compose up -d`)
-- `OLLAMA_URL` und `PAPERLESS_URL` in `.env` für Embedding und Dokument-Links
+- At least one document processed via `process_document` or `embed_document`
+- Search container running (`docker compose up -d`)
+- `OLLAMA_URL` and `PAPERLESS_URL` in `.env` for embedding and document links
 
-## Technik
+## Tech stack
 
 - FastAPI + HTMX
-- Quellcode: `search/`
-- Docker-Image wird via `docker-compose.yml` gebaut
+- Source code: `search/`
+- Docker image built via `docker-compose.yml`

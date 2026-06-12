@@ -1,10 +1,10 @@
-# Projektstruktur
+# Project structure
 
 ```
 paperless-chain/
 ├── f/paperless_chain/
-│   ├── process_document.flow/     # Haupt-Flow (Webhook)
-│   ├── embed_document.flow/       # Nur Embedding
+│   ├── process_document.flow/     # Main flow (webhook)
+│   ├── embed_document.flow/       # Embedding only
 │   ├── preprocess_webhook.py      # doc_url → doc_id
 │   ├── fetch_document.py
 │   ├── summarize_document.py
@@ -37,20 +37,20 @@ paperless-chain/
 └── queue-embeddings.sh
 ```
 
-## System-Tags
+## System tags
 
-| Tag | Gesetzt von | Bedeutung |
-|-----|-------------|-----------|
-| `AI-Processed` | `update_paperless` | Vollverarbeitung abgeschlossen |
-| `AI-Warning` | `apply_status_tags` | Warnings bei Verarbeitung |
-| `AI-Error` | `handle_flow_failure` | Flow abgebrochen |
-| `AI-Embedded` | `apply_embedded_tag` | Embedding-Flow abgeschlossen |
+| Tag | Set by | Meaning |
+|-----|--------|---------|
+| `AI-Processed` | `update_paperless` | Full processing completed |
+| `AI-Warning` | `apply_status_tags` | Warnings during processing |
+| `AI-Error` | `handle_flow_failure` | Flow aborted |
+| `AI-Embedded` | `apply_embedded_tag` | Embedding flow completed |
 
-System-Tags werden vom LLM bei Tag-Auswahl ignoriert (`text_utils.SYSTEM_TAG_NAMES`).
+System tags are ignored by the LLM when selecting tags (`text_utils.SYSTEM_TAG_NAMES`).
 
-## Qdrant Chunk-Struktur
+## Qdrant chunk structure
 
-Teil-Chunk:
+Partial chunk:
 
 ```json
 {
@@ -58,27 +58,27 @@ Teil-Chunk:
   "payload": {
     "doc_id": 123,
     "chunk_kind": "chunk",
-    "label": "Rechnungspositionen",
+    "label": "Invoice line items",
     "correspondent": "Telekom",
-    "tags": ["rechnung"],
+    "tags": ["invoice"],
     "text": "...",
-    "document_type": "Rechnung"
+    "document_type": "Invoice"
   }
 }
 ```
 
-Zusätzlich pro Dokument ein Chunk mit `"chunk_kind": "summary"`.
+Additionally, one chunk per document with `"chunk_kind": "summary"`.
 
-Collection-Name: `QDRANT_COLLECTION` in `.env` (Default: `paperless-chain-documents` in `.env.example`, `paperless_chain_documents` in `docker-compose.yml` — Werte angleichen).
+Collection name: `QDRANT_COLLECTION` in `.env` (default: `paperless-chain-documents` in `.env.example`, `paperless_chain_documents` in `docker-compose.yml` — align the values).
 
-## Docker-Stack
+## Docker stack
 
-| Service | Rolle |
-|---------|-------|
-| `qdrant` | Vektor-DB |
-| `windmill-db` | PostgreSQL für Windmill |
+| Service | Role |
+|---------|------|
+| `qdrant` | Vector DB |
+| `windmill-db` | PostgreSQL for Windmill |
 | `windmill-server` | Windmill API + UI |
-| `windmill-worker` | Flow-Ausführung (Ollama, Paperless, Qdrant) |
+| `windmill-worker` | Flow execution (Ollama, Paperless, Qdrant) |
 | `search` | Search UI |
 
-Worker-Umgebungsvariablen werden über `WHITELIST_ENVS` an Python-Scripts durchgereicht.
+Worker environment variables are passed through to Python scripts via `WHITELIST_ENVS`.

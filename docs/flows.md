@@ -1,12 +1,12 @@
 # Flows
 
-Zwei Windmill-Flows decken die Haupt-Use-Cases ab. Beide nutzen Ollama (LLM + bge-m3) und speichern Vektoren in Qdrant.
+Two Windmill flows cover the main use cases. Both use Ollama (LLM + bge-m3) and store vectors in Qdrant.
 
-## Übersicht
+## Overview
 
 ```mermaid
 flowchart TB
-  subgraph process ["process_document — Vollverarbeitung"]
+  subgraph process ["process_document — Full processing"]
     direction TB
     P1["Webhook: doc_url → doc_id"] --> P2["fetch"]
     P2 --> P3["summarize"]
@@ -19,7 +19,7 @@ flowchart TB
     P9 --> P10["notify"]
   end
 
-  subgraph embed ["embed_document — Nur Embedding"]
+  subgraph embed ["embed_document — Embedding only"]
     direction TB
     E1["doc_id"] --> E2["fetch"]
     E2 --> E3["summarize"]
@@ -27,45 +27,45 @@ flowchart TB
     E4 --> E5["apply_embedded_tag"]
   end
 
-  process -.->|"Fehler"| Fail["handle_flow_failure → AI-Error + notify"]
-  embed -.->|"Fehler"| Fail
+  process -.->|"Error"| Fail["handle_flow_failure → AI-Error + notify"]
+  embed -.->|"Error"| Fail
 ```
 
-\* Schritt wird übersprungen, wenn der Wert bereits in Paperless gesetzt ist.
+\* Step is skipped when the value is already set in Paperless.
 
 ## `process_document`
 
-**Trigger:** Paperless-Webhook bei **Document Added** (nach OCR und automatischem Matching).
+**Trigger:** Paperless webhook on **Document Added** (after OCR and automatic matching).
 
-**Zweck:** Metadaten per LLM generieren, Paperless aktualisieren, Chunks embedden und in Qdrant speichern.
+**Purpose:** Generate metadata via LLM, update Paperless, embed chunks, and store in Qdrant.
 
-| Schritt | Script | Beschreibung |
-|---------|--------|--------------|
-| Preprocessor | `preprocess_webhook` | Parst `doc_url` → `doc_id` |
-| fetch | `fetch_document` | OCR-Text, Sprache, bestehende Tags/Typen/Korrespondenten |
-| summarize | `summarize_document` | **LLM 1:** Summary + `document_date` aus Volltext |
-| derive_title | `derive_title` | **LLM 2:** Titel aus Summary |
-| resolve_document_type | `resolve_document_type` | **LLM 3:** Dokumenttyp (skip wenn gesetzt) |
-| resolve_correspondent | `resolve_correspondent` | **LLM 4:** Korrespondent (skip wenn gesetzt) |
-| update | `update_paperless` | PATCH Paperless; setzt `AI-Processed` |
-| chunk | `chunk_document` | **LLM 5:** semantische Chunks + Summary-Chunk |
-| embed | `generate_embeddings` | Vektoren via Ollama/bge-m3 |
-| store | `store_qdrant` | Upsert in Qdrant |
-| status_tag | `apply_status_tags` | `AI-Warning` bei Warnings |
-| notify | `notify` | Status/Warnings loggen oder senden |
+| Step | Script | Description |
+|------|--------|-------------|
+| Preprocessor | `preprocess_webhook` | Parses `doc_url` → `doc_id` |
+| fetch | `fetch_document` | OCR text, language, existing tags/types/correspondents |
+| summarize | `summarize_document` | **LLM 1:** Summary + `document_date` from full text |
+| derive_title | `derive_title` | **LLM 2:** Title from summary |
+| resolve_document_type | `resolve_document_type` | **LLM 3:** Document type (skip if set) |
+| resolve_correspondent | `resolve_correspondent` | **LLM 4:** Correspondent (skip if set) |
+| update | `update_paperless` | PATCH Paperless; sets `AI-Processed` |
+| chunk | `chunk_document` | **LLM 5:** Semantic chunks + summary chunk |
+| embed | `generate_embeddings` | Vectors via Ollama/bge-m3 |
+| store | `store_qdrant` | Upsert into Qdrant |
+| status_tag | `apply_status_tags` | `AI-Warning` on warnings |
+| notify | `notify` | Log or send status/warnings |
 
-**Bei Fehlern:** `handle_flow_failure` setzt `AI-Error` und sendet Fehler-Benachrichtigung.
+**On errors:** `handle_flow_failure` sets `AI-Error` and sends an error notification.
 
-### LLM-Verhalten
+### LLM behavior
 
-- Summary + Datum aus **Volltext**; Fallback für Datum: Paperless-Hinzufügedatum
-- Titel, Dokumenttyp, Korrespondent aus **Summary**
-- Chunking aus **Volltext** + Summary-Chunk fürs Embedding
-- Metadaten nur aus bestehenden Paperless-Listen (Typ/Korrespondent können neu angelegt werden)
-- Inhalts-Tags: LLM prüft bestehende Tags, kann unpassende entfernen und passende ergänzen
-- System-Tags (`AI-Warning`, `AI-Error`, `AI-Processed`, `AI-Embedded`) werden vom LLM ignoriert
+- Summary + date from **full text**; fallback for date: Paperless added date
+- Title, document type, correspondent from **summary**
+- Chunking from **full text** + summary chunk for embedding
+- Metadata only from existing Paperless lists (type/correspondent may be created new)
+- Content tags: LLM checks existing tags, may remove unsuitable ones and add suitable ones
+- System tags (`AI-Warning`, `AI-Error`, `AI-Processed`, `AI-Embedded`) are ignored by the LLM
 
-### Manuell starten
+### Start manually
 
 ```bash
 wmill flow run f/paperless_chain/process_document \
@@ -77,22 +77,22 @@ wmill flow run f/paperless_chain/process_document \
 
 ## `embed_document`
 
-**Trigger:** Manuell, per Batch-Queue oder direkt per `doc_id`.
+**Trigger:** Manually, via batch queue, or directly with `doc_id`.
 
-**Zweck:** Nur Embedding — **keine** Änderung an Titel, Tags, Korrespondent oder Dokumenttyp. Nutzt bestehende Paperless-Metadaten für Chunk-Kontext.
+**Purpose:** Embedding only — **no** changes to title, tags, correspondent, or document type. Uses existing Paperless metadata for chunk context.
 
-| Schritt | Script | Beschreibung |
-|---------|--------|--------------|
-| fetch | `fetch_document` | Text + bestehende Metadaten |
-| summarize | `summarize_document` | Summary für Summary-Embedding |
-| chunk | `chunk_document` | Semantische Chunks (Metadaten aus fetch) |
+| Step | Script | Description |
+|------|--------|-------------|
+| fetch | `fetch_document` | Text + existing metadata |
+| summarize | `summarize_document` | Summary for summary embedding |
+| chunk | `chunk_document` | Semantic chunks (metadata from fetch) |
 | embed | `generate_embeddings` | bge-m3 |
-| store | `store_qdrant` | Upsert in Qdrant |
-| embedded_tag | `apply_embedded_tag` | Setzt `AI-Embedded` |
+| store | `store_qdrant` | Upsert into Qdrant |
+| embedded_tag | `apply_embedded_tag` | Sets `AI-Embedded` |
 
-**Bei Fehlern:** `handle_flow_failure` → `AI-Error`.
+**On errors:** `handle_flow_failure` → `AI-Error`.
 
-### Manuell starten
+### Start manually
 
 ```bash
 wmill flow run f/paperless_chain/embed_document \
@@ -102,13 +102,13 @@ wmill flow run f/paperless_chain/embed_document \
   -d '{"doc_id": 42}'
 ```
 
-## Wann welcher Flow?
+## Which flow when?
 
-| Szenario | Flow |
+| Scenario | Flow |
 |----------|------|
-| Neues Dokument automatisch verarbeiten | `process_document` (Paperless-Webhook) |
-| Bestehende Docs nachträglich mit AI-Metadaten | `process_document` (Batch-Queue) |
-| Nur Qdrant aktualisieren, Metadaten unangetastet | `embed_document` |
-| Re-Embedding nach Modellwechsel | `embed_document` (Batch-Queue) |
+| Automatically process new documents | `process_document` (Paperless webhook) |
+| Retroactively add AI metadata to existing docs | `process_document` (batch queue) |
+| Update Qdrant only, leave metadata untouched | `embed_document` |
+| Re-embed after model change | `embed_document` (batch queue) |
 
-Batch-Details: [batch-processing.md](batch-processing.md)
+Batch details: [batch-processing.md](batch-processing.md)

@@ -1,13 +1,13 @@
-# Entwicklung
+# Development
 
-## Scripts deployen
+## Deploy scripts
 
 ```bash
 ./wmill-sync.sh
-./wmill-sync.sh --dry-run    # Vorschau
+./wmill-sync.sh --dry-run    # preview
 ```
 
-## Einzelne Scripts testen
+## Test individual scripts
 
 ```bash
 wmill script run f/paperless_chain/fetch_document \
@@ -17,17 +17,17 @@ wmill script run f/paperless_chain/fetch_document \
   -d '{"doc_id": 1}'
 ```
 
-## Flows testen
+## Test flows
 
 ```bash
-# Vollverarbeitung
+# Full processing
 wmill flow run f/paperless_chain/process_document \
   --base-url "$WMILL_BASE_URL" \
   --workspace "$WMILL_WORKSPACE" \
   --token "$WMILL_TOKEN" \
   -d '{"doc_id": 1}'
 
-# Nur Embedding
+# Embedding only
 wmill flow run f/paperless_chain/embed_document \
   --base-url "$WMILL_BASE_URL" \
   --workspace "$WMILL_WORKSPACE" \
@@ -41,26 +41,26 @@ wmill flow run f/paperless_chain/embed_document \
 docker compose logs -f windmill-worker
 ```
 
-LLM-Requests und Paperless-PATCHs erscheinen als:
+LLM requests and Paperless PATCHs appear as:
 
 - `=== Paperless-chAIn LLM Request ===`
 - `=== Paperless-chAIn Paperless PATCH ===`
 
-## Stack aktualisieren
+## Update the stack
 
 ```bash
 ./update-stack.sh
 ```
 
-Führt aus: `git pull` → `wmill sync push` → `docker compose down` → `docker compose up -d --build`
+Runs: `git pull` → `wmill sync push` → `docker compose down` → `docker compose up -d --build`
 
-## Windmill CLI-Profil (optional)
+## Windmill CLI profile (optional)
 
-Einmalig registrieren, danach reicht `wmill sync push --yes`:
+Register once, then `wmill sync push --yes` is enough:
 
 ```bash
 wmill workspace add paperless_chain main http://localhost:8000
 wmill sync push --yes
 ```
 
-CLI aktualisieren: `wmill upgrade`
+Update CLI: `wmill upgrade`
