@@ -108,7 +108,7 @@ SPRACHE (PFLICHT):
 
 TITEL:
 - title: kurzer Titel auf {lang}, 3-12 Wörter (Wortgrenzen einhalten, niemals mitten im Wort abbrechen)
-- Enthalte Absender (Kurzname), Dokumentart und Datum/Zeitraum
+- Enthalte Absender (Kurzname) und Dokumentart
 - Keine Rechnungsnummern, vollständigen Firmennamen oder Adressen
 
 {_json_schema_instruction(TITLE_SCHEMA)}"""
