@@ -36,14 +36,17 @@ CORRESPONDENT_SCHEMA = {
 
 CHUNK_SCHEMA = {
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "chunks": {
             "type": "array",
+            "minItems": 1,
             "items": {
                 "type": "object",
+                "additionalProperties": False,
                 "properties": {
-                    "text": {"type": "string"},
-                    "label": {"type": "string"},
+                    "text": {"type": "string", "minLength": 1},
+                    "label": {"type": "string", "minLength": 1},
                 },
                 "required": ["text", "label"],
             },
@@ -52,17 +55,48 @@ CHUNK_SCHEMA = {
     "required": ["chunks"],
 }
 
+CHUNK_JSON_EXAMPLE = {
+    "chunks": [
+        {
+            "text": "Rechnungskopf mit Absender, Empfänger und Rechnungsnummer.",
+            "label": "Rechnungskopf",
+        },
+        {
+            "text": "Positionen und Beträge der Rechnung.",
+            "label": "Rechnungspositionen",
+        },
+    ]
+}
 
-def _json_schema_instruction(schema: dict) -> str:
+
+def _json_schema_instruction(schema: dict, *, extra_rules: str = "") -> str:
     schema_json = json.dumps(schema, ensure_ascii=False, indent=2)
+    extra = f"\n{extra_rules.rstrip()}\n" if extra_rules else "\n"
     return f"""\
 JSON-SCHEMA (PFLICHT — exakt dieses Format einhalten):
 {schema_json}
 
 - Alle required-Felder müssen vorhanden sein
-- Keine zusätzlichen Top-Level-Felder
+- Keine zusätzlichen Felder (weder Top-Level noch in Array-Objekten)
 - Feldtypen und verschachtelte Struktur exakt wie im Schema
-- Antworte ausschließlich als JSON gemäß Schema. Keine Erklärungen außerhalb des JSON."""
+- Antworte ausschließlich als JSON gemäß Schema — kein Markdown, kein ```json, keine Erklärungen
+- Gültiges JSON: doppelte Anführungszeichen für Keys und Strings, korrekt escapte Zeilenumbrüche (\\n) und Anführungszeichen (\\") im text-Feld{extra}"""
+
+
+def _chunk_json_schema_instruction() -> str:
+    example_json = json.dumps(CHUNK_JSON_EXAMPLE, ensure_ascii=False, indent=2)
+    return _json_schema_instruction(
+        CHUNK_SCHEMA,
+        extra_rules=f"""\
+AUSGABEFORMAT (STRICT):
+- Root-Objekt mit genau einem Feld: "chunks" (Array)
+- Jedes Array-Element: genau zwei Felder "text" und "label" — keine anderen Namen
+- NIEMALS ein nacktes Array [...] oder Felder wie content, section, sections, items, body
+- NIEMALS chunk_kind, doc_id, summary oder andere Metadaten — nur text und label
+
+BEISPIEL (Struktur und Feldnamen exakt so — Inhalt nur Illustration):
+{example_json}""",
+    )
 
 
 def build_summary_prompt(document_language: str) -> str:
@@ -197,9 +231,10 @@ def build_chunk_prompt(document_language: str) -> str:
     return f"""\
 Du teilst den Volltext eines Dokuments in semantische Such-Chunks auf.
 Die Dokumentsprache laut Paperless ist: {lang}.
-Antworte als JSON.
 
-Regeln:
+{_chunk_json_schema_instruction()}
+
+INHALTSREGELN:
 - chunks: Liste von Abschnitten mit "text" und "label"
 - text: vollständiger Abschnittstext aus dem Dokument (keine Kürzung, keine Auslassungen mit "...")
 - label: kurze Beschreibung auf {lang} (2-6 Wörter), z.B. Rechnungspositionen, Kündigungsfrist
@@ -213,6 +248,4 @@ Regeln:
 - Zusammen sollen die Chunks den relevanten Dokumentinhalt abdecken
 - Boilerplate (AGB, Datenschutz, Impressum) in einen Chunk bündeln
 - Erzeuge KEINE Zusammenfassung — die wird separat gespeichert
-- Mindestens 1 Chunk; kurze Dokumente oft in 1 Chunk, längere typischerweise in 2-5 Chunks (nur mehr wenn klar getrennte Hauptthemen)
-
-{_json_schema_instruction(CHUNK_SCHEMA)}"""
+- Mindestens 1 Chunk; kurze Dokumente oft in 1 Chunk, längere typischerweise in 2-5 Chunks (nur mehr wenn klar getrennte Hauptthemen)"""
