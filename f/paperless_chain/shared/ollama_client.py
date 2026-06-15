@@ -50,26 +50,17 @@ def chat_json(
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        "stream": True,
+        "stream": False,
         "format": format_schema or "json",
         "options": {"temperature": temperature},
     }
     _log_llm_request(model, system, user, temperature)
-    content = ""
     with httpx.Client(timeout=_chat_timeout()) as client:
-        with client.stream("POST", f"{url}/api/chat", json=payload) as response:
-            response.raise_for_status()
-            for line in response.iter_lines():
-                if not line:
-                    continue
-                chunk = json.loads(line)
-                message = chunk.get("message") or {}
-                if message.get("content"):
-                    content += message["content"]
-                if chunk.get("done"):
-                    break
+        response = client.post(f"{url}/api/chat", json=payload)
+        response.raise_for_status()
+        data = response.json()
 
-    text = content.strip()
+    text = ((data.get("message") or {}).get("content") or "").strip()
     try:
         parsed = json.loads(text)
         _log_llm_response(text, parsed)

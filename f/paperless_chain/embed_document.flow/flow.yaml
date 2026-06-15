@@ -30,12 +30,6 @@ value:
             expr: flow_input.doc_id
     - id: summarize
       summary: Summarize document for summary embedding
-      retry:
-        constant:
-          attempts: 2
-          seconds: 5
-        retry_if:
-          expr: "(result?.error?.message || '').includes('Could not parse JSON')"
       value:
         type: script
         path: f/paperless_chain/summarize_document
@@ -54,12 +48,6 @@ value:
             expr: results.fetch.added_date
     - id: chunk
       summary: LLM semantic chunking
-      retry:
-        constant:
-          attempts: 2
-          seconds: 5
-        retry_if:
-          expr: "(result?.error?.message || '').includes('Could not parse JSON')"
       value:
         type: script
         path: f/paperless_chain/chunk_document
