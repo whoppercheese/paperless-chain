@@ -138,12 +138,13 @@ Antworte als JSON.
 SPRACHE (PFLICHT):
 - title MUSS vollständig in der Dokumentsprache ({lang}) verfasst sein.
 - NIEMALS in einer anderen Sprache antworten — auch nicht teilweise.
-- Eigennamen, Firmennamen und Beträge unverändert übernehmen.
 
 TITEL:
 - title: kurzer Titel auf {lang}, 3-12 Wörter (Wortgrenzen einhalten, niemals mitten im Wort abbrechen)
-- Enthalte Absender (Kurzname) und Dokumentart
-- Keine Rechnungsnummern, vollständigen Firmennamen oder Adressen
+- Beschreibe Dokumentart und inhaltlichen Kern (Thema, Zweck, Gegenstand)
+- KEINE Namen: weder Empfänger, Korrespondent/Absender, Firmen, Personen noch andere Eigennamen
+- KEINE Daten: keine Tages-, Monats- oder vollständigen Datumsangaben (Ausnahme: Jahreszahlen, z.B. „Steuerbescheid 2023“)
+- Keine Rechnungsnummern, Vertragsnummern, Beträge oder Adressen
 
 {_json_schema_instruction(TITLE_SCHEMA)}"""
 
