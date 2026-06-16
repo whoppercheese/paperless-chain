@@ -16,11 +16,6 @@ schema:
     document_type_name:
       type: string
       nullable: true
-    correspondent_name:
-      type: string
-      nullable: true
-    tag_names:
-      type: array
     document_language:
       type: string
       default: de

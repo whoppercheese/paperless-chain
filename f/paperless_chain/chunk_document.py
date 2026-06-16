@@ -8,8 +8,6 @@ def main(
     text: str,
     summary: str = "",
     document_type_name: str | None = None,
-    correspondent_name: str | None = None,
-    tag_names: list | None = None,
     document_language: str = "de",
 ) -> dict:
     lang_code = normalize_language(document_language)
@@ -49,9 +47,6 @@ def main(
 
     for chunk in chunks:
         chunk["doc_id"] = doc_id
-        chunk["correspondent"] = correspondent_name
-        chunk["tags"] = tag_names or []
-        chunk["document_type"] = doc_type
 
     return {
         "doc_id": doc_id,

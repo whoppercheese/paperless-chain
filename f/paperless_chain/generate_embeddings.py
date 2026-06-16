@@ -17,10 +17,7 @@ def main(chunks: list) -> dict:
                 "chunk_index": index,
                 "chunk_kind": chunk["chunk_kind"],
                 "label": chunk.get("label", ""),
-                "correspondent": chunk.get("correspondent"),
-                "tags": chunk.get("tags", []),
                 "text": chunk["text"],
-                "document_type": chunk.get("document_type"),
             },
         })
 

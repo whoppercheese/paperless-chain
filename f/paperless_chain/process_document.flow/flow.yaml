@@ -178,12 +178,6 @@ value:
           document_type_name:
             type: javascript
             expr: results.update.document_type_name
-          correspondent_name:
-            type: javascript
-            expr: results.update.correspondent_name
-          tag_names:
-            type: javascript
-            expr: results.update.tag_names
           document_language:
             type: javascript
             expr: results.fetch.document_language

@@ -64,12 +64,6 @@ value:
           document_type_name:
             type: javascript
             expr: results.fetch.document_type_name
-          correspondent_name:
-            type: javascript
-            expr: results.fetch.correspondent_name
-          tag_names:
-            type: javascript
-            expr: results.fetch.tag_names
           document_language:
             type: javascript
             expr: results.fetch.document_language
