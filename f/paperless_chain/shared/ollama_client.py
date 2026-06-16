@@ -52,6 +52,7 @@ def chat_json(
         ],
         "stream": False,
         "format": format_schema or "json",
+        "think": False,
         "options": {"temperature": temperature},
     }
     _log_llm_request(model, system, user, temperature)

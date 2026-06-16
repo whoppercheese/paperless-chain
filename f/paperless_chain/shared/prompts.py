@@ -55,48 +55,18 @@ CHUNK_SCHEMA = {
     "required": ["chunks"],
 }
 
-CHUNK_JSON_EXAMPLE = {
-    "chunks": [
-        {
-            "text": "Rechnungskopf mit Absender, Empfänger und Rechnungsnummer.",
-            "label": "Rechnungskopf",
-        },
-        {
-            "text": "Positionen und Beträge der Rechnung.",
-            "label": "Rechnungspositionen",
-        },
-    ]
-}
 
-
-def _json_schema_instruction(schema: dict, *, extra_rules: str = "") -> str:
+def _json_schema_instruction(schema: dict) -> str:
     schema_json = json.dumps(schema, ensure_ascii=False, indent=2)
-    extra = f"\n{extra_rules.rstrip()}\n" if extra_rules else "\n"
     return f"""\
 JSON-SCHEMA (PFLICHT — exakt dieses Format einhalten):
 {schema_json}
 
 - Alle required-Felder müssen vorhanden sein
-- Keine zusätzlichen Felder (weder Top-Level noch in Array-Objekten)
-- Feldtypen und verschachtelte Struktur exakt wie im Schema
-- Antworte ausschließlich als JSON gemäß Schema — kein Markdown, kein ```json, keine Erklärungen
-- Gültiges JSON: doppelte Anführungszeichen für Keys und Strings, korrekt escapte Zeilenumbrüche (\\n) und Anführungszeichen (\\") im text-Feld{extra}"""
+- Keine zusätzlichen Felder
+- Antworte ausschließlich als JSON — kein Markdown, keine Erklärungen
+"""
 
-
-def _chunk_json_schema_instruction() -> str:
-    example_json = json.dumps(CHUNK_JSON_EXAMPLE, ensure_ascii=False, indent=2)
-    return _json_schema_instruction(
-        CHUNK_SCHEMA,
-        extra_rules=f"""\
-AUSGABEFORMAT (STRICT):
-- Root-Objekt mit genau einem Feld: "chunks" (Array)
-- Jedes Array-Element: genau zwei Felder "text" und "label" — keine anderen Namen
-- NIEMALS ein nacktes Array [...] oder Felder wie content, section, sections, items, body
-- NIEMALS chunk_kind, doc_id, summary oder andere Metadaten — nur text und label
-
-BEISPIEL (Struktur und Feldnamen exakt so — Inhalt nur Illustration):
-{example_json}""",
-    )
 
 
 def build_summary_prompt(document_language: str) -> str:
@@ -230,23 +200,16 @@ Summary:
 def build_chunk_prompt(document_language: str) -> str:
     lang = document_language
     return f"""\
-Du teilst den Volltext eines Dokuments in semantische Such-Chunks auf.
-Die Dokumentsprache laut Paperless ist: {lang}.
+Teile den Volltext in semantische Such-Chunks auf. Dokumentsprache: {lang}.
 
-{_chunk_json_schema_instruction()}
+AUFGABE:
+Jeder Chunk hat "text" (wörtlicher Abschnitt aus dem Dokument) und "label" (kurze Beschreibung, 2-6 Wörter auf {lang}).
 
-INHALTSREGELN:
-- chunks: Liste von Abschnitten mit "text" und "label"
-- text: vollständiger Abschnittstext aus dem Dokument (keine Kürzung, keine Auslassungen mit "...")
-- label: kurze Beschreibung auf {lang} (2-6 Wörter), z.B. Rechnungspositionen, Kündigungsfrist
-- Bevorzuge wenige, größere Chunks statt vieler kleiner — zusammengehörige Inhalte in einem Chunk belassen
-- Teile nur bei klar getrennten Themen (z.B. Vertragskern vs. Anlagen, Rechnungskopf vs. AGB)
-- Kleine Absätze, Einleitungen oder Detailblöcke nicht einzeln abtrennen, wenn sie zum gleichen Thema gehören
-- Tabellen und zugehörige Erläuterungen zusammen in einem Chunk belassen
-- Teile nach inhaltlicher Logik, nicht nach Zeichen-, Token- oder Seitengrenzen
-- Jeder Chunk soll für sich in einer Vektorsuche sinnvoll und ausreichend substanziell sein
-- Keine Überschneidungen zwischen Chunks
-- Zusammen sollen die Chunks den relevanten Dokumentinhalt abdecken
-- Boilerplate (AGB, Datenschutz, Impressum) in einen Chunk bündeln
-- Erzeuge KEINE Zusammenfassung — die wird separat gespeichert
-- Mindestens 1 Chunk; kurze Dokumente oft in 1 Chunk, längere typischerweise in 2-5 Chunks (nur mehr wenn klar getrennte Hauptthemen)"""
+REGELN:
+1. Wenige, große Chunks — nur bei klaren Themenwechseln trennen.
+2. "text" ist immer der vollständige, unveränderte Originaltext des Abschnitts. Nichts kürzen oder weglassen.
+3. Zusammengehöriges zusammenlassen: Tabellen mit Erläuterungen, Einleitungen mit Hauptteil, Detailblöcke mit Kontext.
+4. Boilerplate (AGB, Datenschutz, Impressum) in einen einzigen Chunk bündeln.
+5. Keine Überschneidungen. Zusammen decken die Chunks den gesamten relevanten Inhalt ab.
+6. Keine Zusammenfassung erzeugen — die wird separat gespeichert.
+7. Kurze Dokumente: 1 Chunk. Längere: typisch 2-5 Chunks."""
