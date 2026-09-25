@@ -20,6 +20,7 @@
       color: var(--pico-primary);
       font-weight: 600;
     }
+    .site-header nav ul:last-of-type { gap: 1.25rem; }
 
     .page-header {
       max-width: 1100px;
@@ -60,16 +61,20 @@
     .entity-card.type-document_type header strong { color: var(--pico-warning); }
 
     .entity-card textarea {
-      margin-bottom: 0.75rem;
-      min-height: 70px;
+      margin-bottom: 0;
       font-size: 0.9rem;
+      resize: vertical;
     }
 
-    .form-actions {
+    .form-row {
       display: flex;
-      justify-content: flex-end;
+      gap: 0.5rem;
+      align-items: stretch;
     }
+    .form-row textarea { flex: 1; }
     .save-btn {
+      flex-shrink: 0;
+      align-self: flex-start;
       margin: 0;
       display: inline-flex;
       align-items: center;
