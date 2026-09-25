@@ -1,9 +1,0 @@
-summary: Shared Ollama LLM and embedding client
-description: Provides chat_json and embed_texts functions for Ollama interaction.
-lock: ''
-kind: script
-schema:
-  $schema: https://json-schema.org/draft/2020-12/schema
-  type: object
-  properties: {}
-  required: []
