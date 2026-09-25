@@ -364,6 +364,16 @@ async def entities_update(
     if not entity_id or not description:
         return HTMLResponse("Missing required fields", status_code=400)
 
+    get_r = await http.post(
+        f"{QDRANT_URL}/collections/{ENTITY_COLLECTION}/points/get",
+        json={"ids": [entity_id], "with_payload": True, "with_vector": False},
+    )
+    get_r.raise_for_status()
+    points = get_r.json().get("result", [])
+    if not points:
+        return HTMLResponse("Entity not found", status_code=404)
+    existing_payload = points[0].get("payload", {})
+
     vector = await _embed(description)
 
     r = await http.put(
@@ -373,9 +383,9 @@ async def entities_update(
                 "id": entity_id,
                 "vector": vector,
                 "payload": {
-                    "name": "",
-                    "type": "",
-                    "paperless_id": 0,
+                    "name": existing_payload.get("name", ""),
+                    "type": existing_payload.get("type", ""),
+                    "paperless_id": existing_payload.get("paperless_id", 0),
                     "description": description,
                 },
             }]

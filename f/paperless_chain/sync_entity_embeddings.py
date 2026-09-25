@@ -2,7 +2,7 @@ import os
 
 import httpx
 
-from f.paperless_chain.shared.llm_client import chat, embed_texts
+from f.paperless_chain.shared.llm_client import embed_texts
 from f.paperless_chain.shared.paperless_client import (
     get_all_correspondents,
     get_all_document_types,
@@ -46,22 +46,6 @@ def _get_qdrant_entities(client: httpx.Client, base: str) -> dict:
             "description": p.get("description"),
         }
     return entities
-
-
-def _generate_description(name: str, entity_type: str) -> str:
-    system = f"""\
-Du erstellst eine kurze Beschreibung für einen {entity_type} in einer Dokumentenverwaltung.
-Die Beschreibung hilft beim semantischen Matching von Dokumenten.
-
-REGELN:
-- 1-3 Sätze
-- Beschreibe wofür dieser {entity_type} typischerweise verwendet wird
-- Keywords: wofür er genutzt wird, typische Dokumente
-- Nicht zu spezifisch: keine Eigennamen, keine Nummern
-"""
-
-    user = f"Beschreibe kurz: {name}"
-    return chat(system, user).strip()
 
 
 def _build_entity_id(entity_type: str, paperless_id: int) -> str:
@@ -126,8 +110,7 @@ def main() -> dict:
         new_entities = []
         for key in to_add:
             entity = paperless_entities[key]
-            desc = _generate_description(entity["name"], entity["type"])
-            entity["description"] = desc
+            entity["description"] = ""
             entity["id"] = key
             new_entities.append(entity)
 
