@@ -1,0 +1,18 @@
+<article id="entity-{{ e.id }}" class="entity-card type-{{ e.type }}">
+  <header>
+    <strong>{{ e.name }}</strong>
+    {% if e.paperless_id %}<small>ID {{ e.paperless_id }}</small>{% endif %}
+  </header>
+  <form hx-post="/entities/update"
+        hx-target="closest article"
+        hx-swap="outerHTML">
+    <input type="hidden" name="entity_id" value="{{ e.id }}">
+    <textarea name="description" rows="3" placeholder="Beschreibung eingeben...">{{ e.description }}</textarea>
+    <div class="form-actions">
+      <button type="submit" class="outline save-btn">
+        <span class="save-label">Speichern</span>
+        <span class="save-spinner" aria-hidden="true"></span>
+      </button>
+    </div>
+  </form>
+</article>

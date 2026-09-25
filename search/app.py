@@ -393,14 +393,14 @@ async def entities_update(
     )
     r.raise_for_status()
 
-    entities = await _get_entities()
+    entity = {
+        "id": entity_id,
+        "name": existing_payload.get("name", ""),
+        "type": existing_payload.get("type", ""),
+        "paperless_id": existing_payload.get("paperless_id", 0),
+        "description": description,
+    }
     return templates.TemplateResponse(
-        "entities_table.html",
-        {
-            "request": request,
-            "entities": entities,
-            "tags": [e for e in entities if e["type"] == "tag"],
-            "correspondents": [e for e in entities if e["type"] == "correspondent"],
-            "document_types": [e for e in entities if e["type"] == "document_type"],
-        },
+        "entity_card.html",
+        {"request": request, "e": entity},
     )

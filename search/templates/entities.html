@@ -11,43 +11,90 @@
       --pico-font-size: 15px;
     }
     body > main {
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 2rem 1rem;
+      padding: 1.5rem 1rem;
     }
     h1 { margin-bottom: 0.25rem; }
-    .subtitle { color: var(--pico-muted-color); margin-bottom: 2rem; }
-    .nav { margin-bottom: 2rem; }
-    .nav a { margin-right: 1rem; }
+    h2 { margin-bottom: 0.75rem; }
+    h2 small { color: var(--pico-muted-color); font-weight: normal; }
+    .subtitle { color: var(--pico-muted-color); margin-bottom: 1.5rem; }
+    .nav {
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .nav a { text-decoration: none; }
     .section { margin-bottom: 2rem; }
-    .entity-table {
-      width: 100%;
-      border-collapse: collapse;
+
+    .entity-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
     }
-    .entity-table th, .entity-table td {
-      padding: 0.5rem;
-      text-align: left;
-      border-bottom: 1px solid var(--pico-delimiter-color);
+
+    .entity-card { margin: 0; padding: 1rem; }
+    .entity-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
     }
-    .entity-table th {
-      font-weight: 600;
-      background: var(--pico-background-color);
+    .entity-card header small { color: var(--pico-muted-color); }
+    .entity-card.type-tag header strong { color: var(--pico-primary); }
+    .entity-card.type-correspondent header strong { color: var(--pico-success); }
+    .entity-card.type-document_type header strong { color: var(--pico-warning); }
+
+    .entity-card textarea {
+      margin-bottom: 0.75rem;
+      min-height: 70px;
+      font-size: 0.9rem;
     }
-    .entity-table textarea {
-      width: 100%;
-      min-height: 60px;
-      font-size: 0.85rem;
-      resize: vertical;
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
     }
-    .entity-table .type-tag { color: var(--pico-primary); }
-    .entity-table .type-corr { color: var(--pico-success); }
-    .entity-table .type-doctype { color: var(--pico-warning); }
-    .actions { margin-top: 1rem; }
+    .save-btn {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .save-spinner {
+      display: none;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .htmx-request .save-spinner { display: inline-block; }
+    .htmx-request .save-label { display: none; }
+    .htmx-request .save-btn {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     #message {
       padding: 0.75rem;
       background: var(--pico-success-background);
       border-radius: var(--pico-border-radius);
       margin-bottom: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .entity-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
