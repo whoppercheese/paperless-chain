@@ -13,6 +13,9 @@ LLM_URL = ""
 LLM_EMBED_MODEL = ""
 PAPERLESS_URL = ""
 PAPERLESS_API_TOKEN = ""
+WMILL_BASE_URL = ""
+WMILL_WORKSPACE = ""
+WMILL_TOKEN = ""
 
 http: httpx.AsyncClient
 
@@ -30,7 +33,7 @@ def _content_tag_names(names: list[str]) -> list[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global QDRANT_URL, QDRANT_COLLECTION, ENTITY_COLLECTION, LLM_URL, LLM_EMBED_MODEL, PAPERLESS_URL, PAPERLESS_API_TOKEN, http
+    global QDRANT_URL, QDRANT_COLLECTION, ENTITY_COLLECTION, LLM_URL, LLM_EMBED_MODEL, PAPERLESS_URL, PAPERLESS_API_TOKEN, WMILL_BASE_URL, WMILL_WORKSPACE, WMILL_TOKEN, http
     QDRANT_URL = os.environ["QDRANT_URL"].rstrip("/")
     QDRANT_COLLECTION = os.environ.get("QDRANT_COLLECTION", "paperless_chain_documents")
     ENTITY_COLLECTION = os.environ.get("ENTITY_COLLECTION", "entity_embeddings")
@@ -38,6 +41,9 @@ async def lifespan(app: FastAPI):
     LLM_EMBED_MODEL = os.environ.get("LLM_EMBED_MODEL", "bge-m3")
     PAPERLESS_URL = os.environ.get("PAPERLESS_URL", "").rstrip("/")
     PAPERLESS_API_TOKEN = os.environ.get("PAPERLESS_API_TOKEN", "")
+    WMILL_BASE_URL = os.environ.get("WMILL_BASE_URL", "").rstrip("/")
+    WMILL_WORKSPACE = os.environ.get("WMILL_WORKSPACE", "")
+    WMILL_TOKEN = os.environ.get("WMILL_TOKEN", "")
     http = httpx.AsyncClient(timeout=120.0)
     yield
     await http.aclose()
@@ -316,12 +322,34 @@ async def entities(request: Request):
 
 @app.post("/entities/sync", response_class=HTMLResponse)
 async def entities_sync(request: Request):
+    message = ""
+
+    if WMILL_BASE_URL and WMILL_WORKSPACE and WMILL_TOKEN:
+        try:
+            r = await http.post(
+                f"{WMILL_BASE_URL}/api/w/{WMILL_WORKSPACE}/jobs/run/f/paperless_chain/process_entity_sync",
+                headers={"Authorization": f"Bearer {WMILL_TOKEN}"},
+                json={},
+            )
+            if r.status_code == 200:
+                message = "Sync gestartet!"
+            else:
+                message = f"Fehler: {r.status_code}"
+        except Exception as e:
+            message = f"Fehler: {e}"
+    else:
+        message = "Windmill nicht konfiguriert (WMILL_BASE_URL, WMILL_WORKSPACE, WMILL_TOKEN fehlen)"
+
+    entities = await _get_entities()
     return templates.TemplateResponse(
         "entities.html",
         {
             "request": request,
-            "message": "Sync wird in Windmill ausgeführt (process_entity_sync)",
-            "entities": await _get_entities(),
+            "message": message,
+            "entities": entities,
+            "tags": [e for e in entities if e["type"] == "tag"],
+            "correspondents": [e for e in entities if e["type"] == "correspondent"],
+            "document_types": [e for e in entities if e["type"] == "document_type"],
             "paperless_url": PAPERLESS_URL,
         },
     )
@@ -361,5 +389,8 @@ async def entities_update(
         {
             "request": request,
             "entities": entities,
+            "tags": [e for e in entities if e["type"] == "tag"],
+            "correspondents": [e for e in entities if e["type"] == "correspondent"],
+            "document_types": [e for e in entities if e["type"] == "document_type"],
         },
     )
