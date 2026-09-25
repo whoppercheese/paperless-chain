@@ -13,7 +13,21 @@ EMBED_DIM = 1024
 COLLECTION = "entity_embeddings"
 
 
+def _ensure_collection(client: httpx.Client, base: str) -> None:
+    r = client.get(f"{base}/collections/{COLLECTION}")
+    if r.status_code == 200:
+        return
+
+    create = client.put(
+        f"{base}/collections/{COLLECTION}",
+        json={"vectors": {"size": EMBED_DIM, "distance": "Cosine"}},
+    )
+    create.raise_for_status()
+
+
 def _get_qdrant_entities(client: httpx.Client, base: str) -> dict:
+    _ensure_collection(client, base)
+
     r = client.post(
         f"{base}/collections/{COLLECTION}/points/scroll",
         json={"limit": 10000, "with_payload": True},
