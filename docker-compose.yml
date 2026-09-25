@@ -96,6 +96,9 @@ services:
       LLM_EMBED_MODEL: ${LLM_EMBED_MODEL:-bge-m3}
       PAPERLESS_URL: ${PAPERLESS_URL}
       PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN}
+      WMILL_BASE_URL: ${WMILL_BASE_URL}
+      WMILL_WORKSPACE: ${WMILL_WORKSPACE}
+      WMILL_TOKEN: ${WMILL_TOKEN}
     depends_on:
       - qdrant
     extra_hosts:
