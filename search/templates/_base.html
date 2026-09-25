@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Paperless-chAIn{% endblock %} &middot; Paperless-chAIn</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>
+    :root { --pico-font-size: 16px; }
+
+    .site-header {
+      border-bottom: 1px solid var(--pico-muted-border-color);
+      background: var(--pico-card-background-color);
+    }
+    .site-header nav { margin-bottom: 0; padding: 0.5rem 1rem; }
+    .brand { text-decoration: none; font-size: 1.05rem; }
+    .brand strong { color: var(--pico-primary); }
+    .site-header nav ul li a[aria-current="page"] {
+      color: var(--pico-primary);
+      font-weight: 600;
+    }
+    .site-header nav ul:last-of-type { gap: 1.25rem; }
+
+    .page-header {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 0;
+    }
+    .page-header hgroup { margin-bottom: 0; }
+    .page-header h1 { margin-bottom: 0.25rem; font-size: 1.5rem; }
+    .page-header p { color: var(--pico-muted-color); margin-bottom: 0; }
+
+    body > main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    {% block extra_styles %}{% endblock %}
+
+    @media (max-width: 600px) {
+      .site-header nav ul li { padding: 0; }
+      .site-header nav ul:first-of-type li a { font-size: 1rem; }
+      {% block mobile_styles %}{% endblock %}
+    }
+  </style>
+</head>
+<body>
+  {% include '_nav.html' %}
+
+  <section class="page-header">
+    <hgroup>
+      <h1>{% block heading %}{% endblock %}</h1>
+      <p>{% block subtitle %}{% endblock %}</p>
+    </hgroup>
+  </section>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
