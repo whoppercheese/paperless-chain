@@ -327,12 +327,12 @@ async def entities_sync(request: Request):
     if WMILL_BASE_URL and WMILL_WORKSPACE and WMILL_TOKEN:
         try:
             r = await http.post(
-                f"{WMILL_BASE_URL}/api/w/{WMILL_WORKSPACE}/jobs/run/f/paperless_chain/process_entity_sync",
+                f"{WMILL_BASE_URL}/api/w/{WMILL_WORKSPACE}/jobs/run/p/f/paperless_chain/sync_entity_embeddings",
                 headers={"Authorization": f"Bearer {WMILL_TOKEN}"},
                 json={},
             )
             if r.status_code == 200:
-                message = "Sync gestartet!"
+                message = "Sync gestartet (sync_entity_embeddings)!"
             else:
                 message = f"Fehler: {r.status_code}"
         except Exception as e:
