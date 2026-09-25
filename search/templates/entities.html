@@ -232,8 +232,18 @@
       });
 
       document.querySelectorAll('.section.collapsible').forEach(section => {
-        const hasVisible = !!section.querySelector('.entity-card:not([hidden])');
-        section.hidden = !hasVisible;
+        let sectionVisible = 0;
+        section.querySelectorAll('.entity-card').forEach(card => {
+          if (!card.hidden) sectionVisible++;
+        });
+        const countEl = section.querySelector('.section-count');
+        if (countEl) {
+          const total = countEl.dataset.total;
+          countEl.textContent = (q || onlyEmpty)
+            ? `(${sectionVisible} / ${total})`
+            : `(${total})`;
+        }
+        section.hidden = sectionVisible === 0;
       });
 
       if (countEl) {

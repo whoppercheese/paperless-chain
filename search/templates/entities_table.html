@@ -1,6 +1,6 @@
 <div class="section collapsible" data-section="tags">
   <button type="button" class="section-toggle" aria-expanded="true" aria-controls="section-body-tags">
-    <h2>Tags <small>({{ tags|length }})</small></h2>
+    <h2>Tags <small class="section-count" data-total="{{ tags|length }}">({{ tags|length }})</small></h2>
     <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="6 9 12 15 18 9"/>
     </svg>
@@ -18,7 +18,7 @@
 
 <div class="section collapsible" data-section="correspondents">
   <button type="button" class="section-toggle" aria-expanded="true" aria-controls="section-body-correspondents">
-    <h2>Korrespondenten <small>({{ correspondents|length }})</small></h2>
+    <h2>Korrespondenten <small class="section-count" data-total="{{ correspondents|length }}">({{ correspondents|length }})</small></h2>
     <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="6 9 12 15 18 9"/>
     </svg>
@@ -36,7 +36,7 @@
 
 <div class="section collapsible" data-section="document_types">
   <button type="button" class="section-toggle" aria-expanded="true" aria-controls="section-body-document_types">
-    <h2>Dokumenttypen <small>({{ document_types|length }})</small></h2>
+    <h2>Dokumenttypen <small class="section-count" data-total="{{ document_types|length }}">({{ document_types|length }})</small></h2>
     <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="6 9 12 15 18 9"/>
     </svg>
