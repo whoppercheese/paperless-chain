@@ -39,8 +39,11 @@ def send_matrix(message: str) -> None:
     txn = str(uuid.uuid4())
     url = f"{homeserver}/_matrix/client/v3/rooms/{room_id}/send/m.room.message/{txn}"
     with httpx.Client(timeout=30.0) as client:
-        r = client.put(url, json={"msgtype": "m.text", "body": message},
-                       headers={"Authorization": f"Bearer {token}"})
+        r = client.put(
+            url,
+            params={"access_token": token},
+            json={"msgtype": "m.text", "body": message},
+        )
         r.raise_for_status()
 
 
