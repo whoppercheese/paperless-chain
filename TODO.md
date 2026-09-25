@@ -1,0 +1,2 @@
+- umstellen auf direct matrix messages
+- matrix message wenn neue entity in paperless
