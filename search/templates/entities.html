@@ -69,16 +69,21 @@
     .form-row {
       display: flex;
       gap: 0.5rem;
-      align-items: stretch;
+      align-items: flex-start;
     }
-    .form-row textarea { flex: 1; }
+    .form-row textarea {
+      flex: 1 1 auto;
+      width: 100%;
+      min-width: 0;
+    }
     .save-btn {
       flex-shrink: 0;
-      align-self: flex-start;
       margin: 0;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
+      width: 96px;
     }
 
     .save-spinner {
