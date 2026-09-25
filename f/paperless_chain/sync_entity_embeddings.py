@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import httpx
 
@@ -10,6 +11,15 @@ from f.paperless_chain.shared.paperless_client import (
 
 EMBED_DIM = 1024
 COLLECTION = "entity_embeddings"
+ENTITY_NAMESPACE = uuid.NAMESPACE_DNS
+
+
+def _entity_key(entity_type: str, paperless_id: int) -> str:
+    return f"{entity_type}_{paperless_id}"
+
+
+def _qdrant_point_id(entity_key: str) -> str:
+    return str(uuid.uuid5(ENTITY_NAMESPACE, entity_key))
 
 
 def _ensure_collection(client: httpx.Client, base: str) -> None:
@@ -47,10 +57,6 @@ def _get_qdrant_entities(client: httpx.Client, base: str) -> dict:
     return entities
 
 
-def _build_entity_id(entity_type: str, paperless_id: int) -> str:
-    return f"{entity_type}_{paperless_id}"
-
-
 def main() -> dict:
     base = os.environ["QDRANT_URL"].rstrip("/")
 
@@ -61,7 +67,7 @@ def main() -> dict:
     paperless_entities = {}
 
     for tag in all_tags:
-        key = _build_entity_id("tag", tag["id"])
+        key = _entity_key("tag", tag["id"])
         paperless_entities[key] = {
             "name": tag["name"],
             "type": "tag",
@@ -69,7 +75,7 @@ def main() -> dict:
         }
 
     for corr in all_correspondents:
-        key = _build_entity_id("corr", corr["id"])
+        key = _entity_key("corr", corr["id"])
         paperless_entities[key] = {
             "name": corr["name"],
             "type": "correspondent",
@@ -77,7 +83,7 @@ def main() -> dict:
         }
 
     for dt in all_types:
-        key = _build_entity_id("doctype", dt["id"])
+        key = _entity_key("doctype", dt["id"])
         paperless_entities[key] = {
             "name": dt["name"],
             "type": "document_type",
@@ -110,7 +116,7 @@ def main() -> dict:
         for key in to_add:
             entity = paperless_entities[key]
             entity["description"] = ""
-            entity["id"] = key
+            entity["id"] = _qdrant_point_id(key)
             new_entities.append(entity)
 
         points = []
