@@ -3,23 +3,39 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Paperless-chAIn Search</title>
+  <title>Suche &middot; Paperless-chAIn</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   <style>
-    :root {
-      --pico-font-size: 16px;
+    :root { --pico-font-size: 16px; }
+
+    .site-header {
+      border-bottom: 1px solid var(--pico-muted-border-color);
+      background: var(--pico-card-background-color);
     }
-    body > main {
-      max-width: 960px;
+    .site-header nav { margin-bottom: 0; padding: 0.5rem 1rem; }
+    .brand { text-decoration: none; font-size: 1.05rem; }
+    .brand strong { color: var(--pico-primary); }
+    .site-header nav ul li a[aria-current="page"] {
+      color: var(--pico-primary);
+      font-weight: 600;
+    }
+
+    .page-header {
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 2rem 1rem;
+      padding: 1.5rem 1rem 0;
     }
-    h1 { margin-bottom: 0.25rem; }
-    .nav { margin-bottom: 2rem; }
-    .nav a { margin-right: 1rem; text-decoration: none; }
-    .nav a[href="{{ request.url.path }}"] { font-weight: bold; }
-    .subtitle { color: var(--pico-muted-color); margin-bottom: 2rem; }
+    .page-header hgroup { margin-bottom: 0; }
+    .page-header h1 { margin-bottom: 0.25rem; font-size: 1.5rem; }
+    .page-header p { color: var(--pico-muted-color); margin-bottom: 0; }
+
+    body > main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
     .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; }
     .filters select, .filters input[type="number"] { margin-bottom: 0; }
     .filters label { flex: 1; min-width: 140px; }
@@ -30,21 +46,25 @@
       padding: 2rem 0;
       color: var(--pico-muted-color);
     }
-    #spinner.htmx-request {
-      display: block;
+    #spinner.htmx-request { display: block; }
+
+    @media (max-width: 600px) {
+      .site-header nav ul li { padding: 0; }
+      .site-header nav ul:first-of-type li a { font-size: 1rem; }
     }
   </style>
 </head>
 <body>
-  <main>
-    <nav class="nav">
-      <a href="/">Suche</a>
-      <a href="/entities">Entities</a>
-    </nav>
+  {% include '_nav.html' %}
 
-    <h1>Paperless-chAIn Search</h1>
-    <p class="subtitle">Semantische Suche in deinen Dokumenten</p>
+  <section class="page-header">
+    <hgroup>
+      <h1>Suche</h1>
+      <p>Semantische Suche in deinen Dokumenten</p>
+    </hgroup>
+  </section>
 
+  <main class="container">
     <form hx-post="/search" hx-target="#results" hx-indicator="#spinner">
       <fieldset role="group">
         <input

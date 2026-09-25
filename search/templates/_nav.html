@@ -1,0 +1,11 @@
+<header class="site-header">
+  <nav>
+    <ul>
+      <li><a href="/" class="brand">Paperless-<strong>chAIn</strong></a></li>
+    </ul>
+    <ul>
+      <li><a href="/"{% if request.url.path == '/' %} aria-current="page"{% endif %}>Suche</a></li>
+      <li><a href="/entities"{% if request.url.path.startswith('/entities') %} aria-current="page"{% endif %}>Entities</a></li>
+    </ul>
+  </nav>
+</header>

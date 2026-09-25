@@ -3,29 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Paperless-chAIn Entities</title>
+  <title>Entities &middot; Paperless-chAIn</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   <style>
-    :root {
-      --pico-font-size: 15px;
+    :root { --pico-font-size: 15px; }
+
+    .site-header {
+      border-bottom: 1px solid var(--pico-muted-border-color);
+      background: var(--pico-card-background-color);
     }
+    .site-header nav { margin-bottom: 0; padding: 0.5rem 1rem; }
+    .brand { text-decoration: none; font-size: 1.05rem; }
+    .brand strong { color: var(--pico-primary); }
+    .site-header nav ul li a[aria-current="page"] {
+      color: var(--pico-primary);
+      font-weight: 600;
+    }
+
+    .page-header {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 0;
+    }
+    .page-header hgroup { margin-bottom: 0; }
+    .page-header h1 { margin-bottom: 0.25rem; font-size: 1.5rem; }
+    .page-header p { color: var(--pico-muted-color); margin-bottom: 0; }
+
     body > main {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 1.5rem 1rem;
+      padding: 1rem;
     }
-    h1 { margin-bottom: 0.25rem; }
     h2 { margin-bottom: 0.75rem; }
     h2 small { color: var(--pico-muted-color); font-weight: normal; }
-    .subtitle { color: var(--pico-muted-color); margin-bottom: 1.5rem; }
-    .nav {
-      margin-bottom: 1.5rem;
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .nav a { text-decoration: none; }
     .section { margin-bottom: 2rem; }
 
     .entity-grid {
@@ -93,21 +104,56 @@
       margin-bottom: 1rem;
     }
 
+    .filters-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--pico-card-background-color);
+      border: 1px solid var(--pico-muted-border-color);
+      border-radius: var(--pico-border-radius);
+    }
+    .filters-bar input[type="search"] {
+      flex: 1;
+      min-width: 180px;
+      margin: 0;
+    }
+    .filter-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 0.9rem;
+    }
+    .filter-toggle input { margin: 0; }
+    .filter-count {
+      color: var(--pico-muted-color);
+      white-space: nowrap;
+      font-size: 0.85rem;
+    }
+
     @media (max-width: 600px) {
       .entity-grid { grid-template-columns: 1fr; }
+      .site-header nav ul li { padding: 0; }
+      .site-header nav ul:first-of-type li a { font-size: 1rem; }
     }
   </style>
 </head>
 <body>
-  <main>
-    <nav class="nav">
-      <a href="/">Suche</a>
-      <a href="/entities">Entities</a>
-    </nav>
+  {% include '_nav.html' %}
 
-    <h1>Entity Descriptions</h1>
-    <p class="subtitle">Beschreibungen für semantisches Matching verwalten</p>
+  <section class="page-header">
+    <hgroup>
+      <h1>Entities</h1>
+      <p>Beschreibungen für semantisches Matching verwalten</p>
+    </hgroup>
+  </section>
 
+  <main class="container">
     {% if message %}
     <div id="message">{{ message }}</div>
     {% endif %}
@@ -117,9 +163,71 @@
     </form>
     <p><small>Sync läuft alle 5 Minuten automatisch in Windmill</small></p>
 
+    <div class="filters-bar">
+      <input type="search" id="filter-name" placeholder="Nach Name filtern..." aria-label="Nach Name filtern">
+      <label class="filter-toggle">
+        <input type="checkbox" id="filter-empty" role="switch">
+        <span>Nur ohne Beschreibung</span>
+      </label>
+      <small id="filter-count" class="filter-count"></small>
+    </div>
+
     <div id="entities-table">
       {% include 'entities_table.html' %}
     </div>
   </main>
+  <script>
+  (function() {
+    const nameInput = document.getElementById('filter-name');
+    const emptyToggle = document.getElementById('filter-empty');
+    const countEl = document.getElementById('filter-count');
+
+    function applyFilters() {
+      const q = (nameInput.value || '').toLowerCase().trim();
+      const onlyEmpty = emptyToggle.checked;
+      let total = 0;
+      let visible = 0;
+
+      document.querySelectorAll('.entity-card').forEach(card => {
+        total++;
+        const name = (card.dataset.name || '').toLowerCase();
+        const matchesName = !q || name.includes(q);
+        const isEmpty = card.classList.contains('empty-description');
+        const matchesEmpty = !onlyEmpty || isEmpty;
+        const show = matchesName && matchesEmpty;
+        card.hidden = !show;
+        if (show) visible++;
+      });
+
+      document.querySelectorAll('.section').forEach(section => {
+        const hasVisible = !!section.querySelector('.entity-card:not([hidden])');
+        section.hidden = !hasVisible;
+      });
+
+      if (countEl) {
+        countEl.textContent = (q || onlyEmpty)
+          ? `${visible} von ${total}`
+          : `${total} insgesamt`;
+      }
+
+      try {
+        localStorage.setItem('entity-filter-name', q);
+        localStorage.setItem('entity-filter-empty', onlyEmpty ? '1' : '0');
+      } catch(e) {}
+    }
+
+    nameInput.addEventListener('input', applyFilters);
+    emptyToggle.addEventListener('change', applyFilters);
+    document.body.addEventListener('htmx:afterSwap', applyFilters);
+
+    try {
+      const savedName = localStorage.getItem('entity-filter-name');
+      if (savedName) nameInput.value = savedName;
+      if (localStorage.getItem('entity-filter-empty') === '1') emptyToggle.checked = true;
+    } catch(e) {}
+
+    applyFilters();
+  })();
+  </script>
 </body>
 </html>

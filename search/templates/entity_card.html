@@ -1,4 +1,4 @@
-<article id="entity-{{ e.id }}" class="entity-card type-{{ e.type }}">
+<article id="entity-{{ e.id }}" class="entity-card type-{{ e.type }}{% if not e.description %} empty-description{% endif %}" data-name="{{ e.name|lower }}">
   <header>
     <strong>{{ e.name }}</strong>
     {% if e.paperless_id %}<small>ID {{ e.paperless_id }}</small>{% endif %}
