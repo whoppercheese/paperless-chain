@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 QDRANT_URL = ""
 QDRANT_COLLECTION = ""
 ENTITY_COLLECTION = "entity_embeddings"
+EMBED_DIM = 1024
 LLM_URL = ""
 LLM_EMBED_MODEL = ""
 PAPERLESS_URL = ""
@@ -33,10 +34,11 @@ def _content_tag_names(names: list[str]) -> list[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global QDRANT_URL, QDRANT_COLLECTION, ENTITY_COLLECTION, LLM_URL, LLM_EMBED_MODEL, PAPERLESS_URL, PAPERLESS_API_TOKEN, WMILL_BASE_URL, WMILL_WORKSPACE, WMILL_TOKEN, http
+    global QDRANT_URL, QDRANT_COLLECTION, ENTITY_COLLECTION, EMBED_DIM, LLM_URL, LLM_EMBED_MODEL, PAPERLESS_URL, PAPERLESS_API_TOKEN, WMILL_BASE_URL, WMILL_WORKSPACE, WMILL_TOKEN, http
     QDRANT_URL = os.environ["QDRANT_URL"].rstrip("/")
     QDRANT_COLLECTION = os.environ.get("QDRANT_COLLECTION", "paperless_chain_documents")
     ENTITY_COLLECTION = os.environ.get("ENTITY_COLLECTION", "entity_embeddings")
+    EMBED_DIM = int(os.environ.get("EMBED_DIM", "1024"))
     LLM_URL = os.environ["LLM_URL"].rstrip("/")
     LLM_EMBED_MODEL = os.environ.get("LLM_EMBED_MODEL", "bge-m3")
     PAPERLESS_URL = os.environ.get("PAPERLESS_URL", "").rstrip("/")
@@ -361,8 +363,10 @@ async def entities_update(
     entity_id: str = Form(""),
     description: str = Form(""),
 ):
-    if not entity_id or not description:
-        return HTMLResponse("Missing required fields", status_code=400)
+    if not entity_id:
+        return HTMLResponse("Missing entity_id", status_code=400)
+
+    description = description.strip()
 
     get_r = await http.post(
         f"{QDRANT_URL}/collections/{ENTITY_COLLECTION}/points",
@@ -374,7 +378,10 @@ async def entities_update(
         return HTMLResponse("Entity not found", status_code=404)
     existing_payload = points[0].get("payload", {})
 
-    vector = await _embed(description)
+    if description:
+        vector = await _embed(description)
+    else:
+        vector = [0.0] * EMBED_DIM
 
     r = await http.put(
         f"{QDRANT_URL}/collections/{ENTITY_COLLECTION}/points",
