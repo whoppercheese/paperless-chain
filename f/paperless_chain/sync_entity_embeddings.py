@@ -2,7 +2,6 @@ import os
 
 import httpx
 
-from f.paperless_chain.shared.llm_client import embed_texts
 from f.paperless_chain.shared.paperless_client import (
     get_all_correspondents,
     get_all_document_types,
@@ -114,14 +113,11 @@ def main() -> dict:
             entity["id"] = key
             new_entities.append(entity)
 
-        descriptions = [e["description"] for e in new_entities]
-        vectors = embed_texts(descriptions)
-
         points = []
-        for i, entity in enumerate(new_entities):
+        for entity in new_entities:
             points.append({
                 "id": entity["id"],
-                "vector": vectors[i],
+                "vector": [0.0] * EMBED_DIM,
                 "payload": {
                     "name": entity["name"],
                     "type": entity["type"],
@@ -130,14 +126,15 @@ def main() -> dict:
                 },
             })
 
-        if points:
-            with httpx.Client(timeout=300.0) as client:
-                r = client.put(
-                    f"{base}/collections/{COLLECTION}/points",
-                    json={"points": points},
-                )
-                r.raise_for_status()
-            added_count = len(points)
+        with httpx.Client(timeout=300.0) as client:
+            r = client.put(
+                f"{base}/collections/{COLLECTION}/points",
+                json={"points": points},
+            )
+            if r.status_code >= 400:
+                raise RuntimeError(f"Qdrant PUT failed: {r.status_code} {r.text}")
+            r.raise_for_status()
+        added_count = len(points)
 
     return {
         "paperless_total": len(paperless_entities),

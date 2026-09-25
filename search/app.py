@@ -331,7 +331,7 @@ async def entities_sync(request: Request):
                 headers={"Authorization": f"Bearer {WMILL_TOKEN}"},
                 json={},
             )
-            if r.status_code == 200:
+            if r.status_code in (200, 201):
                 message = "Sync gestartet (sync_entity_embeddings)!"
             else:
                 message = f"Fehler: {r.status_code}"
