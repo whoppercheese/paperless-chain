@@ -3,6 +3,7 @@ import uuid
 
 import httpx
 
+from f.paperless_chain.shared.notify_client import notify
 from f.paperless_chain.shared.paperless_client import (
     get_all_correspondents,
     get_all_document_types,
@@ -12,6 +13,26 @@ from f.paperless_chain.shared.paperless_client import (
 EMBED_DIM = 1024
 COLLECTION = "entity_embeddings"
 ENTITY_NAMESPACE = uuid.NAMESPACE_DNS
+
+TYPE_LABELS = {
+    "tag": "Tag",
+    "correspondent": "Korrespondent",
+    "document_type": "Dokumenttyp",
+}
+
+
+def _format_message(added_entities: list[dict]) -> str:
+    by_type: dict[str, list[str]] = {"tag": [], "correspondent": [], "document_type": []}
+    for e in added_entities:
+        by_type.setdefault(e["type"], []).append(e["name"])
+
+    lines = [
+        f"Paperless-chAIn: {len(added_entities)} neue Entity(s) synchronisiert",
+    ]
+    for entity_type, names in by_type.items():
+        if names:
+            lines.append(f"{TYPE_LABELS[entity_type]}: {', '.join(names)}")
+    return "\n".join(lines)
 
 
 def _entity_key(entity_type: str, paperless_id: int) -> str:
@@ -111,6 +132,7 @@ def main() -> dict:
         deleted_count = len(point_ids)
 
     added_count = 0
+    notified = False
     if to_add:
         new_entities = []
         for key in to_add:
@@ -142,12 +164,23 @@ def main() -> dict:
             r.raise_for_status()
         added_count = len(points)
 
+        try:
+            mode = notify(
+                _format_message(new_entities),
+                event="paperless_chain.entities_added",
+            )
+            notified = mode != "log"
+        except Exception as e:
+            print(f"Notify failed: {e}")
+            notified = False
+
     return {
         "paperless_total": len(paperless_entities),
         "qdrant_before": len(qdrant_entities),
         "added": added_count,
         "deleted": deleted_count,
         "qdrant_after": len(qdrant_entities) - deleted_count + added_count,
+        "notified": notified,
     }
 
 
