@@ -93,6 +93,28 @@ def create_or_get_correspondent(name: str) -> tuple[dict, bool]:
     return post("/api/correspondents/", {"name": cleaned}), True
 
 
+def get_all_document_types() -> list[dict]:
+    return paginate("/api/document_types/")
+
+
+def get_all_correspondents() -> list[dict]:
+    return paginate("/api/correspondents/")
+
+
+def get_all_tags() -> list[dict]:
+    return paginate("/api/tags/")
+
+
+def create_or_get_tag(name: str) -> tuple[dict, bool]:
+    cleaned = " ".join(name.split()).strip()
+    if not cleaned:
+        raise ValueError("tag name is empty")
+    for item in paginate("/api/tags/"):
+        if item["name"].lower() == cleaned.lower():
+            return item, False
+    return post("/api/tags/", {"name": cleaned}), True
+
+
 def add_document_tags(doc_id: int, tag_names: list[str]) -> dict:
     if not tag_names:
         return {

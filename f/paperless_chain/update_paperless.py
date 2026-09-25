@@ -37,6 +37,7 @@ def _collect_metadata_warnings(
     final_content_tag_names: list[str],
     created_document_type: dict | None,
     created_correspondent: dict | None,
+    created_tags: list[dict] | None,
 ) -> list[str]:
     warnings: list[str] = []
     if not final_title:
@@ -51,6 +52,9 @@ def _collect_metadata_warnings(
         warnings.append(f"Neuer Dokumenttyp angelegt: {created_document_type['name']}")
     if created_correspondent and created_correspondent.get("created"):
         warnings.append(f"Neuer Korrespondent angelegt: {created_correspondent['name']}")
+    if created_tags:
+        for tag in created_tags:
+            warnings.append(f"Neuer Tag angelegt: {tag['name']}")
     return warnings
 
 
@@ -67,6 +71,22 @@ def _merge_created_entity(
         return
     name_to_id[name.lower()] = entity_id
     id_to_name[entity_id] = name
+
+
+def _merge_created_tags(
+    created_tags: list[dict] | None,
+    tag_name_to_id: dict[str, int],
+    tag_id_to_name: dict[int, str],
+) -> None:
+    if not created_tags:
+        return
+    for tag in created_tags:
+        name = (tag.get("name") or "").strip()
+        tag_id = tag.get("id")
+        if not name or tag_id is None:
+            continue
+        tag_name_to_id[name.lower()] = tag_id
+        tag_id_to_name[tag_id] = name
 
 
 def main(
@@ -86,6 +106,8 @@ def main(
     title_warnings: list | None = None,
     created_document_type: dict | None = None,
     created_correspondent: dict | None = None,
+    selected_tags: list[str] | None = None,
+    created_tags: list[dict] | None = None,
 ) -> dict:
     tag_name_to_id = {t["name"].lower(): t["id"] for t in existing_tags}
     tag_id_to_name = {t["id"]: t["name"] for t in existing_tags}
@@ -95,6 +117,7 @@ def main(
     dtype_id_to_name = {d["id"]: d["name"] for d in existing_document_types}
     _merge_created_entity(created_document_type, dtype_name_to_id, dtype_id_to_name)
     _merge_created_entity(created_correspondent, corr_name_to_id, corr_id_to_name)
+    _merge_created_tags(created_tags, tag_name_to_id, tag_id_to_name)
     collected_warnings = list(summarize_warnings or [])
     collected_warnings.extend(title_warnings or [])
     current_ids = list(current_tag_ids or [])
@@ -105,6 +128,10 @@ def main(
         collected_warnings.append(
             f"System-Tag {FLOW_PROCESSED_TAG} existiert nicht in Paperless"
         )
+
+    if selected_tags:
+        for tag_name in selected_tags:
+            _append_tag(tag_name, tag_name_to_id, tag_ids, known_tag_ids)
 
     correspondent_id = None
     correspondent_name = selected_correspondent
@@ -144,7 +171,7 @@ def main(
     final_correspondent_name = correspondent_name
     if not final_correspondent_name and current_correspondent_id:
         final_correspondent_name = corr_id_to_name.get(current_correspondent_id)
-    final_content_tag_names = _content_tag_names_from_ids(current_ids, tag_id_to_name)
+    final_content_tag_names = _content_tag_names_from_ids(tag_ids, tag_id_to_name)
 
     collected_warnings.extend(
         _collect_metadata_warnings(
@@ -154,6 +181,7 @@ def main(
             final_content_tag_names=final_content_tag_names,
             created_document_type=created_document_type,
             created_correspondent=created_correspondent,
+            created_tags=created_tags,
         )
     )
 

@@ -1,0 +1,16 @@
+summary: Sync entity embeddings with Paperless
+description: >-
+  Runs every 5 minutes. Syncs tags, correspondents and document types
+  from Paperless to Qdrant with embeddings for semantic matching.
+value:
+  same_worker: true
+  modules:
+    - id: sync
+      summary: Sync entities to Qdrant
+      value:
+        type: script
+        path: f/paperless_chain/sync_entity_embeddings
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  properties: {}

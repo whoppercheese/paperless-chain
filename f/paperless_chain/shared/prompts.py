@@ -34,6 +34,14 @@ CORRESPONDENT_SCHEMA = {
     "required": ["correspondent"],
 }
 
+TAGS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "tags": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["tags"],
+}
+
 CHUNK_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -167,6 +175,28 @@ KORRESPONDENT:
 {_json_schema_instruction(CORRESPONDENT_SCHEMA)}"""
 
 
+def build_resolve_tags_prompt(document_language: str) -> str:
+    lang = document_language
+    return f"""\
+Du bestimmst passende Tags für ein Dokument in Paperless-ngx.
+Die Dokumentsprache laut Paperless ist: {lang}.
+Im User-Prompt erhältst du nur die Summary — nicht den Volltext.
+Antworte als JSON.
+
+SPRACHE (PFLICHT):
+- Jeder Tag MUSS vollständig in der Dokumentsprache ({lang}) verfasst sein.
+- NIEMALS in einer anderen Sprache antworten.
+
+TAGS:
+- tags: Array von passenden Tags auf {lang}
+- Kurze, generische Tags (1-3 Wörter)
+- Tags wie: bezahlt, unbearbeitet, wichtig, Rechnung, Vertrag, Mahnung, Kündigung, Versicherung, Steuer, etc.
+- Nur wirklich zutreffende Tags — keine Vermutungen
+- Maximal 5 Tags
+
+{_json_schema_instruction(TAGS_SCHEMA)}"""
+
+
 def build_derive_title_user_prompt(doc_id: int, summary: str) -> str:
     return f"""\
 Leite aus der folgenden Summary einen Titel ab.
@@ -190,6 +220,16 @@ Summary:
 def build_resolve_correspondent_user_prompt(doc_id: int, summary: str) -> str:
     return f"""\
 Bestimme den Korrespondenten aus der folgenden Summary.
+
+Dokument-ID: {doc_id}
+
+Summary:
+{summary.strip()}"""
+
+
+def build_resolve_tags_user_prompt(doc_id: int, summary: str) -> str:
+    return f"""\
+Bestimme passende Tags aus der folgenden Summary.
 
 Dokument-ID: {doc_id}
 

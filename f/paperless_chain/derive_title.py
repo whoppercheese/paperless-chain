@@ -1,4 +1,4 @@
-from f.paperless_chain.shared.ollama_client import chat_json
+from f.paperless_chain.shared.llm_client import chat_json
 from f.paperless_chain.shared.prompts import (
     TITLE_SCHEMA,
     build_derive_title_prompt,

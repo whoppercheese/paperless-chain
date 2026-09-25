@@ -1,0 +1,97 @@
+summary: Resolve document type using Laya decision model
+description: >-
+  Filter candidates via embedding match, use Laya to decide,
+  gate by confidence, save new document type to Paperless.
+value:
+  same_worker: true
+  modules:
+    - id: filter_candidates
+      summary: Filter candidates by embedding similarity
+      value:
+        type: script
+        path: f/paperless_chain/filter_candidates
+        input_transforms:
+          summary:
+            type: javascript
+            expr: flow_input.summary
+          entity_type:
+            type: javascript
+            expr: "'document_type'"
+          top_k:
+            type: javascript
+            expr: "$env:ENTITY_TOP_K ?? 5"
+          min_score:
+            type: javascript
+            expr: "$env:ENTITY_MIN_SCORE ?? 0.7"
+    - id: laya_decide
+      summary: Use Laya decision model
+      value:
+        type: script
+        path: f/paperless_chain/laya_decide
+        input_transforms:
+          summary:
+            type: javascript
+            expr: flow_input.summary
+          entity_type:
+            type: javascript
+            expr: "'document_type'"
+          candidates:
+            type: javascript
+            expr: results.filter_candidates.candidates
+          doc_id:
+            type: javascript
+            expr: flow_input.doc_id
+    - id: gate_decision
+      summary: Gate decision by confidence threshold
+      value:
+        type: script
+        path: f/paperless_chain/gate_decision
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: flow_input.doc_id
+          entity_type:
+            type: javascript
+            expr: "'document_type'"
+          selected:
+            type: javascript
+            expr: results.laya_decide.selected
+          candidates:
+            type: javascript
+            expr: results.laya_decide.candidates
+    - id: save_entity
+      summary: Save document type to Paperless if new
+      value:
+        type: script
+        path: f/paperless_chain/save_entity
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: flow_input.doc_id
+          entity_type:
+            type: javascript
+            expr: "'document_type'"
+          accepted:
+            type: javascript
+            expr: results.gate_decision.accepted
+    - id: apply_warning
+      summary: Apply AI-Warning tag if entities were rejected
+      value:
+        type: script
+        path: f/paperless_chain/apply_status_tags
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: flow_input.doc_id
+          update_warnings:
+            type: javascript
+            expr: results.gate_decision.warnings
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  properties:
+    doc_id:
+      type: integer
+    summary:
+      type: string
+  required: [doc_id, summary]

@@ -1,15 +1,10 @@
-from f.paperless_chain.shared.ollama_client import chat_json
-from f.paperless_chain.shared.paperless_client import create_or_get_document_type
+from f.paperless_chain.shared.llm_client import chat_json
 from f.paperless_chain.shared.prompts import (
     DOCUMENT_TYPE_SCHEMA,
     build_resolve_document_type_prompt,
     build_resolve_document_type_user_prompt,
 )
 from f.paperless_chain.shared.text_utils import language_name, normalize_language
-
-
-def _entity_summary(entity: dict, created: bool) -> dict:
-    return {"id": entity["id"], "name": entity["name"], "created": created}
 
 
 def main(
@@ -32,24 +27,12 @@ def main(
         warnings.append("LLM hat keinen Dokumenttyp geliefert")
         return {
             "doc_id": doc_id,
-            "selected_document_type": None,
-            "created_document_type": None,
+            "generated_document_type": None,
             "warnings": warnings,
         }
 
-    try:
-        entity, was_created = create_or_get_document_type(generated_type)
-        return {
-            "doc_id": doc_id,
-            "selected_document_type": entity["name"],
-            "created_document_type": _entity_summary(entity, was_created),
-            "warnings": warnings,
-        }
-    except Exception as exc:
-        warnings.append(f"Dokumenttyp konnte nicht angelegt werden: {exc}")
-        return {
-            "doc_id": doc_id,
-            "selected_document_type": None,
-            "created_document_type": None,
-            "warnings": warnings,
-        }
+    return {
+        "doc_id": doc_id,
+        "generated_document_type": generated_type,
+        "warnings": warnings,
+    }

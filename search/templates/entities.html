@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paperless-chAIn Entities</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>
+    :root {
+      --pico-font-size: 15px;
+    }
+    body > main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .subtitle { color: var(--pico-muted-color); margin-bottom: 2rem; }
+    .nav { margin-bottom: 2rem; }
+    .nav a { margin-right: 1rem; }
+    .section { margin-bottom: 2rem; }
+    .entity-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .entity-table th, .entity-table td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--pico-delimiter-color);
+    }
+    .entity-table th {
+      font-weight: 600;
+      background: var(--pico-background-color);
+    }
+    .entity-table textarea {
+      width: 100%;
+      min-height: 60px;
+      font-size: 0.85rem;
+      resize: vertical;
+    }
+    .entity-table .type-tag { color: var(--pico-primary); }
+    .entity-table .type-corr { color: var(--pico-success); }
+    .entity-table .type-doctype { color: var(--pico-warning); }
+    .actions { margin-top: 1rem; }
+    #message {
+      padding: 0.75rem;
+      background: var(--pico-success-background);
+      border-radius: var(--pico-border-radius);
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="nav">
+      <a href="/">Suche</a>
+      <a href="/entities">Entities</a>
+    </nav>
+
+    <h1>Entity Descriptions</h1>
+    <p class="subtitle">Beschreibungen für semantisches Matching verwalten</p>
+
+    {% if message %}
+    <div id="message">{{ message }}</div>
+    {% endif %}
+
+    <form hx-post="/entities/sync" hx-target="body">
+      <button type="submit" class="secondary">Jetzt synchronisieren</button>
+    </form>
+    <p><small>Sync läuft alle 5 Minuten automatisch in Windmill</small></p>
+
+    <div id="entities-table">
+      {% include 'entities_table.html' %}
+    </div>
+  </main>
+</body>
+</html>

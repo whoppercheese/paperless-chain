@@ -1,15 +1,10 @@
-from f.paperless_chain.shared.ollama_client import chat_json
-from f.paperless_chain.shared.paperless_client import create_or_get_correspondent
+from f.paperless_chain.shared.llm_client import chat_json
 from f.paperless_chain.shared.prompts import (
     CORRESPONDENT_SCHEMA,
     build_resolve_correspondent_prompt,
     build_resolve_correspondent_user_prompt,
 )
 from f.paperless_chain.shared.text_utils import language_name, normalize_language
-
-
-def _entity_summary(entity: dict, created: bool) -> dict:
-    return {"id": entity["id"], "name": entity["name"], "created": created}
 
 
 def main(
@@ -32,24 +27,12 @@ def main(
         warnings.append("LLM hat keinen Korrespondenten geliefert")
         return {
             "doc_id": doc_id,
-            "selected_correspondent": None,
-            "created_correspondent": None,
+            "generated_correspondent": None,
             "warnings": warnings,
         }
 
-    try:
-        entity, was_created = create_or_get_correspondent(generated_corr)
-        return {
-            "doc_id": doc_id,
-            "selected_correspondent": entity["name"],
-            "created_correspondent": _entity_summary(entity, was_created),
-            "warnings": warnings,
-        }
-    except Exception as exc:
-        warnings.append(f"Korrespondent konnte nicht angelegt werden: {exc}")
-        return {
-            "doc_id": doc_id,
-            "selected_correspondent": None,
-            "created_correspondent": None,
-            "warnings": warnings,
-        }
+    return {
+        "doc_id": doc_id,
+        "generated_correspondent": generated_corr,
+        "warnings": warnings,
+    }

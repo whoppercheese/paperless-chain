@@ -1,0 +1,98 @@
+<div class="section">
+  <h2>Tags ({{ tags|length }})</h2>
+  {% if tags %}
+  <table class="entity-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Beschreibung</th>
+        <th>Paperless ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in tags %}
+      <tr>
+        <td>{{ e.name }}</td>
+        <td>
+          <form hx-post="/entities/update" hx-target="#entity-{{ e.id }}">
+            <input type="hidden" name="entity_id" value="{{ e.id }}">
+            <textarea name="description" rows="2">{{ e.description }}</textarea>
+            <button type="submit" class="outline small">Speichern</button>
+          </form>
+          <span id="entity-{{ e.id }}"></span>
+        </td>
+        <td>{{ e.paperless_id }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Keine Tags gefunden. Sync ausführen.</p>
+  {% endif %}
+</div>
+
+<div class="section">
+  <h2>Korrespondenten ({{ correspondents|length }})</h2>
+  {% if correspondents %}
+  <table class="entity-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Beschreibung</th>
+        <th>Paperless ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in correspondents %}
+      <tr>
+        <td>{{ e.name }}</td>
+        <td>
+          <form hx-post="/entities/update" hx-target="#entity-{{ e.id }}">
+            <input type="hidden" name="entity_id" value="{{ e.id }}">
+            <textarea name="description" rows="2">{{ e.description }}</textarea>
+            <button type="submit" class="outline small">Speichern</button>
+          </form>
+          <span id="entity-{{ e.id }}"></span>
+        </td>
+        <td>{{ e.paperless_id }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Keine Korrespondenten gefunden. Sync ausführen.</p>
+  {% endif %}
+</div>
+
+<div class="section">
+  <h2>Dokumenttypen ({{ document_types|length }})</h2>
+  {% if document_types %}
+  <table class="entity-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Beschreibung</th>
+        <th>Paperless ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in document_types %}
+      <tr>
+        <td>{{ e.name }}</td>
+        <td>
+          <form hx-post="/entities/update" hx-target="#entity-{{ e.id }}">
+            <input type="hidden" name="entity_id" value="{{ e.id }}">
+            <textarea name="description" rows="2">{{ e.description }}</textarea>
+            <button type="submit" class="outline small">Speichern</button>
+          </form>
+          <span id="entity-{{ e.id }}"></span>
+        </td>
+        <td>{{ e.paperless_id }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Keine Dokumenttypen gefunden. Sync ausführen.</p>
+  {% endif %}
+</div>

@@ -70,11 +70,9 @@ value:
             type: javascript
             expr: results.fetch.document_language
     - id: resolve_document_type
-      summary: Resolve document type when not preset in Paperless
-      skip_if:
-        expr: results.fetch.current_metadata.document_type != null
+      summary: Resolve document type using Laya decision model
       value:
-        type: script
+        type: flow
         path: f/paperless_chain/resolve_document_type
         input_transforms:
           doc_id:
@@ -83,15 +81,10 @@ value:
           summary:
             type: javascript
             expr: results.summarize.summary
-          document_language:
-            type: javascript
-            expr: results.fetch.document_language
     - id: resolve_correspondent
-      summary: Resolve correspondent when not preset in Paperless
-      skip_if:
-        expr: results.fetch.current_metadata.correspondent != null
+      summary: Resolve correspondent using Laya decision model
       value:
-        type: script
+        type: flow
         path: f/paperless_chain/resolve_correspondent
         input_transforms:
           doc_id:
@@ -100,9 +93,18 @@ value:
           summary:
             type: javascript
             expr: results.summarize.summary
-          document_language:
+    - id: resolve_tags
+      summary: Resolve tags using Laya decision model
+      value:
+        type: flow
+        path: f/paperless_chain/resolve_tags
+        input_transforms:
+          doc_id:
             type: javascript
-            expr: results.fetch.document_language
+            expr: results.fetch.doc_id
+          summary:
+            type: javascript
+            expr: results.summarize.summary
     - id: update
       summary: Update Paperless metadata
       value:
@@ -117,7 +119,7 @@ value:
             expr: results.derive_title.title
           selected_correspondent:
             type: javascript
-            expr: results.resolve_correspondent?.selected_correspondent
+            expr: "(results.resolve_correspondent?.saved || [])[0]"
           existing_tags:
             type: javascript
             expr: results.fetch.existing_tags
@@ -132,7 +134,7 @@ value:
             expr: results.fetch.existing_document_types
           selected_document_type:
             type: javascript
-            expr: results.resolve_document_type?.selected_document_type
+            expr: "(results.resolve_document_type?.saved || [])[0]"
           document_date:
             type: javascript
             expr: results.summarize.document_date
@@ -153,13 +155,20 @@ value:
             expr: >-
               [...(results.derive_title.warnings || []),
               ...(results.resolve_document_type?.warnings || []),
-              ...(results.resolve_correspondent?.warnings || [])]
+              ...(results.resolve_correspondent?.warnings || []),
+              ...(results.resolve_tags?.warnings || [])]
+          selected_tags:
+            type: javascript
+            expr: results.resolve_tags?.saved
           created_document_type:
             type: javascript
-            expr: results.resolve_document_type?.created_document_type
+            expr: "(results.resolve_document_type?.created || [])[0]"
           created_correspondent:
             type: javascript
-            expr: results.resolve_correspondent?.created_correspondent
+            expr: "(results.resolve_correspondent?.created || [])[0]"
+          created_tags:
+            type: javascript
+            expr: results.resolve_tags?.created
     - id: chunk
       summary: LLM semantic chunking
       value:

@@ -8,8 +8,9 @@ from fastapi.templating import Jinja2Templates
 
 QDRANT_URL = ""
 QDRANT_COLLECTION = ""
-OLLAMA_URL = ""
-OLLAMA_EMBED_MODEL = ""
+ENTITY_COLLECTION = "entity_embeddings"
+LLM_URL = ""
+LLM_EMBED_MODEL = ""
 PAPERLESS_URL = ""
 PAPERLESS_API_TOKEN = ""
 
@@ -29,11 +30,12 @@ def _content_tag_names(names: list[str]) -> list[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global QDRANT_URL, QDRANT_COLLECTION, OLLAMA_URL, OLLAMA_EMBED_MODEL, PAPERLESS_URL, PAPERLESS_API_TOKEN, http
+    global QDRANT_URL, QDRANT_COLLECTION, ENTITY_COLLECTION, LLM_URL, LLM_EMBED_MODEL, PAPERLESS_URL, PAPERLESS_API_TOKEN, http
     QDRANT_URL = os.environ["QDRANT_URL"].rstrip("/")
     QDRANT_COLLECTION = os.environ.get("QDRANT_COLLECTION", "paperless_chain_documents")
-    OLLAMA_URL = os.environ["OLLAMA_URL"].rstrip("/")
-    OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "bge-m3")
+    ENTITY_COLLECTION = os.environ.get("ENTITY_COLLECTION", "entity_embeddings")
+    LLM_URL = os.environ["LLM_URL"].rstrip("/")
+    LLM_EMBED_MODEL = os.environ.get("LLM_EMBED_MODEL", "bge-m3")
     PAPERLESS_URL = os.environ.get("PAPERLESS_URL", "").rstrip("/")
     PAPERLESS_API_TOKEN = os.environ.get("PAPERLESS_API_TOKEN", "")
     http = httpx.AsyncClient(timeout=120.0)
@@ -74,8 +76,8 @@ async def _paperless_paginate(path: str, params: dict | None = None) -> list[dic
 
 async def _embed(text: str) -> list[float]:
     r = await http.post(
-        f"{OLLAMA_URL}/api/embed",
-        json={"model": OLLAMA_EMBED_MODEL, "input": [text]},
+        f"{LLM_URL}/api/embed",
+        json={"model": LLM_EMBED_MODEL, "input": [text]},
     )
     r.raise_for_status()
     data = r.json()
@@ -265,5 +267,99 @@ async def search(
             "documents": grouped,
             "query": query,
             "paperless_url": PAPERLESS_URL,
+        },
+    )
+
+
+async def _get_entities() -> list[dict]:
+    r = await http.post(
+        f"{QDRANT_URL}/collections/{ENTITY_COLLECTION}/points/scroll",
+        json={"limit": 10000, "with_payload": True},
+    )
+    if r.status_code != 200:
+        return []
+    points = r.json().get("result", {}).get("points", [])
+
+    entities = []
+    for pt in points:
+        payload = pt.get("payload", {})
+        entities.append({
+            "id": pt["id"],
+            "name": payload.get("name", ""),
+            "type": payload.get("type", ""),
+            "paperless_id": payload.get("paperless_id"),
+            "description": payload.get("description", ""),
+        })
+    return entities
+
+
+@app.get("/entities", response_class=HTMLResponse)
+async def entities(request: Request):
+    entities = await _get_entities()
+
+    tags = [e for e in entities if e["type"] == "tag"]
+    correspondents = [e for e in entities if e["type"] == "correspondent"]
+    document_types = [e for e in entities if e["type"] == "document_type"]
+
+    return templates.TemplateResponse(
+        "entities.html",
+        {
+            "request": request,
+            "entities": entities,
+            "tags": tags,
+            "correspondents": correspondents,
+            "document_types": document_types,
+            "paperless_url": PAPERLESS_URL,
+        },
+    )
+
+
+@app.post("/entities/sync", response_class=HTMLResponse)
+async def entities_sync(request: Request):
+    return templates.TemplateResponse(
+        "entities.html",
+        {
+            "request": request,
+            "message": "Sync wird in Windmill ausgeführt (process_entity_sync)",
+            "entities": await _get_entities(),
+            "paperless_url": PAPERLESS_URL,
+        },
+    )
+
+
+@app.post("/entities/update", response_class=HTMLResponse)
+async def entities_update(
+    request: Request,
+    entity_id: str = Form(""),
+    description: str = Form(""),
+):
+    if not entity_id or not description:
+        return HTMLResponse("Missing required fields", status_code=400)
+
+    vector = await _embed(description)
+
+    r = await http.put(
+        f"{QDRANT_URL}/collections/{ENTITY_COLLECTION}/points",
+        json={
+            "points": [{
+                "id": entity_id,
+                "vector": vector,
+                "payload": {
+                    "name": "",
+                    "type": "",
+                    "paperless_id": 0,
+                    "description": description,
+                },
+            }]
+        },
+    )
+    r.raise_for_status()
+
+    entities = await _get_entities()
+    return templates.TemplateResponse(
+        "entities_table.html",
+        {
+            "request": request,
+            "entities": entities,
         },
     )
