@@ -365,7 +365,7 @@ async def entities_update(
         return HTMLResponse("Missing required fields", status_code=400)
 
     get_r = await http.post(
-        f"{QDRANT_URL}/collections/{ENTITY_COLLECTION}/points/get",
+        f"{QDRANT_URL}/collections/{ENTITY_COLLECTION}/points",
         json={"ids": [entity_id], "with_payload": True, "with_vector": False},
     )
     get_r.raise_for_status()
