@@ -1,32 +1,53 @@
-<div class="section">
-  <h2>Tags <small>({{ tags|length }})</small></h2>
-  {% if tags %}
-  <div class="entity-grid">
-    {% for e in tags %}{% include 'entity_card.html' %}{% endfor %}
+<div class="section collapsible" data-section="tags">
+  <button type="button" class="section-toggle" aria-expanded="true" aria-controls="section-body-tags">
+    <h2>Tags <small>({{ tags|length }})</small></h2>
+    <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </button>
+  <div class="section-body" id="section-body-tags">
+    {% if tags %}
+    <div class="entity-grid">
+      {% for e in tags %}{% include 'entity_card.html' %}{% endfor %}
+    </div>
+    {% else %}
+    <p><em>Keine Tags gefunden. Sync ausführen.</em></p>
+    {% endif %}
   </div>
-  {% else %}
-  <p><em>Keine Tags gefunden. Sync ausführen.</em></p>
-  {% endif %}
 </div>
 
-<div class="section">
-  <h2>Korrespondenten <small>({{ correspondents|length }})</small></h2>
-  {% if correspondents %}
-  <div class="entity-grid">
-    {% for e in correspondents %}{% include 'entity_card.html' %}{% endfor %}
+<div class="section collapsible" data-section="correspondents">
+  <button type="button" class="section-toggle" aria-expanded="true" aria-controls="section-body-correspondents">
+    <h2>Korrespondenten <small>({{ correspondents|length }})</small></h2>
+    <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </button>
+  <div class="section-body" id="section-body-correspondents">
+    {% if correspondents %}
+    <div class="entity-grid">
+      {% for e in correspondents %}{% include 'entity_card.html' %}{% endfor %}
+    </div>
+    {% else %}
+    <p><em>Keine Korrespondenten gefunden. Sync ausführen.</em></p>
+    {% endif %}
   </div>
-  {% else %}
-  <p><em>Keine Korrespondenten gefunden. Sync ausführen.</em></p>
-  {% endif %}
 </div>
 
-<div class="section">
-  <h2>Dokumenttypen <small>({{ document_types|length }})</small></h2>
-  {% if document_types %}
-  <div class="entity-grid">
-    {% for e in document_types %}{% include 'entity_card.html' %}{% endfor %}
+<div class="section collapsible" data-section="document_types">
+  <button type="button" class="section-toggle" aria-expanded="true" aria-controls="section-body-document_types">
+    <h2>Dokumenttypen <small>({{ document_types|length }})</small></h2>
+    <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </button>
+  <div class="section-body" id="section-body-document_types">
+    {% if document_types %}
+    <div class="entity-grid">
+      {% for e in document_types %}{% include 'entity_card.html' %}{% endfor %}
+    </div>
+    {% else %}
+    <p><em>Keine Dokumenttypen gefunden. Sync ausführen.</em></p>
+    {% endif %}
   </div>
-  {% else %}
-  <p><em>Keine Dokumenttypen gefunden. Sync ausführen.</em></p>
-  {% endif %}
 </div>

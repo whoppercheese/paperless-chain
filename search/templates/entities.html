@@ -119,6 +119,33 @@
       white-space: nowrap;
       font-size: 0.85rem;
     }
+
+    .section.collapsible { margin-bottom: 1rem; }
+    .section-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.5rem 0;
+      margin: 0 0 0.75rem 0;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    .section-toggle h2 { margin: 0; flex: 1; }
+    .section-toggle:hover h2 small { color: var(--pico-color); }
+    .chevron {
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+      color: var(--pico-muted-color);
+    }
+    .section.collapsed .chevron { transform: rotate(-90deg); }
+    .section.collapsed .section-body { display: none; }
+    .section:focus-within .section-toggle { outline: 2px solid var(--pico-primary); outline-offset: 2px; border-radius: var(--pico-border-radius); }
+    .no-filter-match { margin: 0.5rem 0; color: var(--pico-muted-color); }
 {% endblock %}
 
 {% block mobile_styles %}
@@ -152,6 +179,37 @@
 {% block scripts %}
   <script>
   (function() {
+    const STORAGE_PREFIX = 'entity-section-';
+
+    document.body.addEventListener('click', (ev) => {
+      const toggle = ev.target.closest('.section-toggle');
+      if (!toggle) return;
+      const section = toggle.closest('.section.collapsible');
+      if (!section) return;
+      const key = section.dataset.section;
+      const collapsed = section.classList.toggle('collapsed');
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      try { localStorage.setItem(STORAGE_PREFIX + key, collapsed ? '0' : '1'); } catch(e) {}
+    });
+
+    function restoreSectionStates() {
+      document.querySelectorAll('.section.collapsible').forEach(section => {
+        const key = section.dataset.section;
+        const toggle = section.querySelector('.section-toggle');
+        if (!toggle) return;
+        try {
+          if (localStorage.getItem(STORAGE_PREFIX + key) === '0') {
+            section.classList.add('collapsed');
+            toggle.setAttribute('aria-expanded', 'false');
+          } else {
+            section.classList.remove('collapsed');
+            toggle.setAttribute('aria-expanded', 'true');
+          }
+        } catch(e) {}
+      });
+    }
+    restoreSectionStates();
+
     const nameInput = document.getElementById('filter-name');
     const emptyToggle = document.getElementById('filter-empty');
     const countEl = document.getElementById('filter-count');
@@ -173,7 +231,7 @@
         if (show) visible++;
       });
 
-      document.querySelectorAll('.section').forEach(section => {
+      document.querySelectorAll('.section.collapsible').forEach(section => {
         const hasVisible = !!section.querySelector('.entity-card:not([hidden])');
         section.hidden = !hasVisible;
       });
@@ -192,7 +250,10 @@
 
     nameInput.addEventListener('input', applyFilters);
     emptyToggle.addEventListener('change', applyFilters);
-    document.body.addEventListener('htmx:afterSwap', applyFilters);
+    document.body.addEventListener('htmx:afterSwap', () => {
+      restoreSectionStates();
+      applyFilters();
+    });
 
     try {
       const savedName = localStorage.getItem('entity-filter-name');
