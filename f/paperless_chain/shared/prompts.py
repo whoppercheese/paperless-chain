@@ -67,8 +67,9 @@ SPRACHE (PFLICHT):
 
 INHALT:
 Lies den gesamten Text und fasse ihn zusammen.
-- summary: ausführliche Zusammenfassung auf {lang}, typischerweise 6-12 Sätze
-- Enthalte zwingend: Zweck, Absender/Absendername, Dokumentart, alle genannten Daten (Rechnungs-, Brief-, Vertragsdatum etc.), Beträge, Fristen, Vertragsparteien, wichtige Konditionen
+- summary: Möglichst kurze Zusammenfassung auf {lang}, typischerweise 2-4 Sätze.
+- Enthalte zwingend: Zweck, Empfänger, Absender/Absendername, Dokumentart, Dokumentendatum
+- Ignoriere: Für die Erkennung des Zwecks irrelevante Daten (Rechnungsnummern, Vertragsnummern, Fristen, Beträge, Kontodaten, Konditionen
 - Keine Floskeln, keine Einleitung wie "Dieses Dokument..."
 - Die Summary muss alle Fakten enthalten, die später für Titel, Dokumenttyp und Korrespondent benötigt werden
 
