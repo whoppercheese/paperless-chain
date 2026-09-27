@@ -1,8 +1,10 @@
+import json
 import os
 import uuid
 
 import httpx
 
+from f.paperless_chain.shared.llm_client import embed_texts
 from f.paperless_chain.shared.notify_client import notify
 from f.paperless_chain.shared.paperless_client import (
     get_all_correspondents,
@@ -36,7 +38,13 @@ def _format_message(added_entities: list[dict]) -> str:
 
 
 def _entity_key(entity_type: str, paperless_id: int) -> str:
-    return f"{entity_type}_{paperless_id}"
+    if entity_type == "correspondent":
+        prefix = "corr"
+    elif entity_type == "document_type":
+        prefix = "doctype"
+    else:
+        prefix = entity_type
+    return f"{prefix}_{paperless_id}"
 
 
 def _qdrant_point_id(entity_key: str) -> str:
@@ -73,7 +81,7 @@ def _get_qdrant_entities(client: httpx.Client, base: str) -> dict:
             "name": p["name"],
             "type": p["type"],
             "paperless_id": p["paperless_id"],
-            "description": p.get("description"),
+            "description": (p.get("description") or "").strip(),
         }
     return entities
 
@@ -118,7 +126,25 @@ def main() -> dict:
     qdrant_keys = set(qdrant_entities.keys())
 
     to_delete = qdrant_keys - paperless_keys
-    to_add = paperless_keys - qdrant_keys
+    to_upsert: list[dict] = []
+    added_entities_for_notify: list[dict] = []
+
+    for key in sorted(paperless_keys - qdrant_keys):
+        entity = paperless_entities[key]
+        entity["id"] = _qdrant_point_id(key)
+        entity["description"] = ""
+        to_upsert.append(entity)
+        added_entities_for_notify.append({"type": entity["type"], "name": entity["name"]})
+
+    for key in sorted(paperless_keys & qdrant_keys):
+        existing = qdrant_entities[key]
+        description = existing.get("description", "")
+        if not description:
+            continue
+        entity = paperless_entities[key]
+        entity["id"] = existing["id"]
+        entity["description"] = description
+        to_upsert.append(entity)
 
     deleted_count = 0
     if to_delete:
@@ -131,21 +157,22 @@ def main() -> dict:
             r.raise_for_status()
         deleted_count = len(point_ids)
 
-    added_count = 0
-    notified = False
-    if to_add:
-        new_entities = []
-        for key in to_add:
-            entity = paperless_entities[key]
-            entity["description"] = ""
-            entity["id"] = _qdrant_point_id(key)
-            new_entities.append(entity)
+    embeddable = [e for e in to_upsert if e.get("description")]
+    skipped_no_description = [e for e in to_upsert if not e.get("description")]
+
+    if skipped_no_description:
+        names = [e["name"] for e in skipped_no_description]
+        print(f"[sync_entity_embeddings] Skip (no description): {names}")
+
+    if embeddable:
+        texts = [f"{e['name']}: {e['description']}" for e in embeddable]
+        vectors = embed_texts(texts)
 
         points = []
-        for entity in new_entities:
+        for i, entity in enumerate(embeddable):
             points.append({
                 "id": entity["id"],
-                "vector": [0.0] * EMBED_DIM,
+                "vector": vectors[i],
                 "payload": {
                     "name": entity["name"],
                     "type": entity["type"],
@@ -162,11 +189,12 @@ def main() -> dict:
             if r.status_code >= 400:
                 raise RuntimeError(f"Qdrant PUT failed: {r.status_code} {r.text}")
             r.raise_for_status()
-        added_count = len(points)
 
+    notified = False
+    if added_entities_for_notify:
         try:
             mode = notify(
-                _format_message(new_entities),
+                _format_message(added_entities_for_notify),
                 event="paperless_chain.entities_added",
             )
             notified = mode != "log"
@@ -177,13 +205,15 @@ def main() -> dict:
     return {
         "paperless_total": len(paperless_entities),
         "qdrant_before": len(qdrant_entities),
-        "added": added_count,
+        "added": len([e for e in to_upsert if e["id"] not in {qe["id"] for qe in qdrant_entities.values()}]),
+        "re_embedded": len([e for e in to_upsert if e["id"] in {qe["id"] for qe in qdrant_entities.values()}]),
         "deleted": deleted_count,
-        "qdrant_after": len(qdrant_entities) - deleted_count + added_count,
+        "skipped_no_description": len(skipped_no_description),
+        "qdrant_after": len(qdrant_entities) - deleted_count + len(added_entities_for_notify),
         "notified": notified,
     }
 
 
 if __name__ == "__main__":
     import json
-    print(json.dumps(main(), indent=2))
+    print(json.dumps(main(), indent=2, ensure_ascii=False))
