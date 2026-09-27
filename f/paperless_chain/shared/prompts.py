@@ -149,14 +149,14 @@ def build_laya_choice_instructions(entity_type: str, criteria_list: str) -> str:
 def build_laya_tag_choice_instructions(tag_name: str, tag_description: str) -> str:
     description = tag_description.strip() or "Keine Beschreibung hinterlegt."
     return (
-        "Passt der folgende Tag sinnvoll zum Inhalt dieses Dokuments und sollte in einer strukturierten "
-        f"Dokumentenverwaltung unbedingt für dieses Dokument verwendet werden? Tag: {tag_name}\nTag-Beschreibung: {description}\n"
+        "Passt das folgende Stichwort sinnvoll zum Inhalt dieses Dokuments und sollte in einer strukturierten "
+        f"Dokumentenverwaltung unbedingt für dieses Dokument verwendet werden?"
     )
 
 
 def build_laya_tag_choice_criteria(tag_name: str, tag_description: str) -> dict:
     description = tag_description.strip() or "Keine Beschreibung hinterlegt."
     return {
-        "yes": "Tag passt sinnvoll zum Dokument",
-        "no": "Tag passt nicht zum Dokument",
+        "yes": f"Stichwort '{tag_name}' ({description}) passt sinnvoll zum Dokument",
+        "no": "Stichwort passt nicht zum Dokument",
     }
