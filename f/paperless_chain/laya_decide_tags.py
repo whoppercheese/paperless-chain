@@ -4,8 +4,7 @@ import os
 import httpx
 
 from f.paperless_chain.shared.prompts import (
-    build_laya_tag_choice_criteria,
-    build_laya_tag_choice_instructions,
+    build_laya_tag_noul_instructions,
 )
 
 YES_THRESHOLD = 0.5
@@ -22,29 +21,28 @@ def _ask_laya_tag_choice(
         "context": summary,
         "questions": {
             "decision": {
-                "type": "choice",
-                "instructions": build_laya_tag_choice_instructions(tag_name, tag_description),
-                "criteria": build_laya_tag_choice_criteria(tag_name, tag_description),
+                "type": "noul",
+                "instructions": build_laya_tag_noul_instructions(tag_name, tag_description),
             }
         },
     }
 
-    print(f"=== Laya tag-choice Request: tag='{tag_name}' ===")
+    print(f"=== Laya tag-noul Request: tag='{tag_name}' ===")
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
     r = client.post(f"{url}/decide", json=payload)
     r.raise_for_status()
     response = r.json()
 
-    print(f"=== Laya tag-choice Response: tag='{tag_name}' ===")
+    print(f"=== Laya tag-noul Response: tag='{tag_name}' ===")
     print(json.dumps(response, ensure_ascii=False, indent=2))
 
     decision = response.get("answers", {}).get("decision", {}) or {}
-    choice = decision.get("choice")
+    noul = decision.get("noul")
     answer_confidence = float(decision.get("answer_confidence", 0.0) or 0.0)
-    if not choice:
-        return "", 0.0
-    return str(choice), answer_confidence
+    if noul is None:
+        return "", answer_confidence
+    return ("yes" if noul >= 0.5 else "no"), answer_confidence
 
 
 def main(

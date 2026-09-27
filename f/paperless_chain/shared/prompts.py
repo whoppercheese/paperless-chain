@@ -146,17 +146,11 @@ def build_laya_choice_instructions(entity_type: str, criteria_list: str) -> str:
     raise ValueError(f"Unsupported entity_type for laya choice: {entity_type}")
 
 
-def build_laya_tag_choice_instructions(tag_name: str, tag_description: str) -> str:
+def build_laya_tag_noul_instructions(tag_name: str, tag_description: str) -> str:
     description = tag_description.strip() or "Keine Beschreibung hinterlegt."
     return (
-        "Passt das folgende Stichwort sinnvoll zum Inhalt dieses Dokuments und sollte in einer strukturierten "
-        f"Dokumentenverwaltung unbedingt für dieses Dokument verwendet werden?"
+        f"Passt das thematische Sachgebiet von '{tag_name}' zum Dokument?\n\n"
+        f"'{tag_name}': {description}\n\n"
+        "true = gleiches thematisches Sachgebiet. "
+        "false = anderes Sachgebiet (auch wenn einzelne Begriffe oberflächlich passen)."
     )
-
-
-def build_laya_tag_choice_criteria(tag_name: str, tag_description: str) -> dict:
-    description = tag_description.strip() or "Keine Beschreibung hinterlegt."
-    return {
-        "yes": f"Stichwort '{tag_name}' ({description}) passt sinnvoll zum Dokument",
-        "no": "Stichwort passt nicht zum Dokument",
-    }
