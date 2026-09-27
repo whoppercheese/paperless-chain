@@ -20,25 +20,31 @@ def main(
             "reasoning": "No candidates provided",
         }
 
-    criteria = {}
-    for c in candidates:
-        criteria[c["name"]] = c["description"]
+    criteria = {c["name"]: c["description"] for c in candidates}
+    criteria_list = "\n".join(f"- {n}: {d}" for n, d in criteria.items())
 
     if entity_type == "tag":
-        instructions = "Welche Tags passen zum Dokument? Bewerte jeden Tag."
-        question_type = "score"
+        instructions = (
+            "Welche Tags passen zum Dokument? Wähle den am besten passenden "
+            "Tag aus den Kandidaten. Es kann nur EIN Tag gewählt werden.\n"
+            f"Kandidaten:\n{criteria_list}"
+        )
     elif entity_type == "correspondent":
-        instructions = "Welcher Korrespondent passt zum Dokument?"
-        question_type = "score"
+        instructions = (
+            "Welcher Korrespondent passt zum Dokument? Wähle einen aus den "
+            f"Kandidaten.\nKandidaten:\n{criteria_list}"
+        )
     elif entity_type == "document_type":
-        instructions = "Welcher Dokumenttyp passt zum Dokument?"
-        question_type = "score"
+        instructions = (
+            "Welcher Dokumenttyp passt zum Dokument? Wähle einen aus den "
+            f"Kandidaten.\nKandidaten:\n{criteria_list}"
+        )
     else:
         return {"error": f"Unknown entity_type: {entity_type}"}
 
     questions = {
         "decision": {
-            "type": question_type,
+            "type": "choice",
             "instructions": instructions,
             "criteria": criteria,
         }
@@ -61,28 +67,21 @@ def main(
     print("=== Laya Response ===")
     print(json.dumps(response, ensure_ascii=False, indent=2))
 
-    decision_raw = response.get("decision")
+    answers = response.get("answers", {})
+    decision = answers.get("decision", {})
+    probabilities = decision.get("probabilities", {}) or {}
 
     if entity_type == "tag":
-        if isinstance(decision_raw, dict):
-            selected = []
-            for name, conf in decision_raw.items():
-                if conf and conf > 0:
-                    selected.append({"name": name, "confidence": conf})
-        elif isinstance(decision_raw, list):
-            selected = [{"name": s, "confidence": 1.0} for s in decision_raw if s]
-        elif isinstance(decision_raw, str):
-            selected = [{"name": s.strip(), "confidence": 1.0} for s in decision_raw.split(",") if s.strip()]
-        else:
-            selected = []
+        selected = sorted(
+            ({"name": n, "confidence": c} for n, c in probabilities.items() if c and c > 0),
+            key=lambda x: x["confidence"],
+            reverse=True,
+        )
     else:
-        if isinstance(decision_raw, dict):
-            selected = []
-            for name, conf in decision_raw.items():
-                if conf and conf > 0:
-                    selected.append({"name": name, "confidence": conf})
-        elif isinstance(decision_raw, str) and decision_raw.strip():
-            selected = [{"name": decision_raw.strip(), "confidence": 1.0}]
+        choice_name = decision.get("choice")
+        confidence = probabilities.get(choice_name, 0.0) if choice_name else 0.0
+        if choice_name and confidence > 0:
+            selected = [{"name": choice_name, "confidence": confidence}]
         else:
             selected = []
 
@@ -90,7 +89,7 @@ def main(
         "doc_id": doc_id,
         "entity_type": entity_type,
         "selected": selected,
-        "raw_response": decision_raw,
+        "raw_response": probabilities,
         "candidates": candidates,
     }
 
