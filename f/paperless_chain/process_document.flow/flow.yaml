@@ -82,7 +82,7 @@ value:
             type: javascript
             expr: "'document_type'"
     - id: laya_decide_document_type
-      summary: "LLM call: decide document type (Laya)"
+      summary: "Laya call: decide document type"
       value:
         type: script
         path: f/paperless_chain/laya_decide
@@ -157,7 +157,7 @@ value:
             type: javascript
             expr: "'correspondent'"
     - id: laya_decide_correspondent
-      summary: "LLM call: decide correspondent (Laya)"
+      summary: "Laya call: decide correspondent"
       value:
         type: script
         path: f/paperless_chain/laya_decide
@@ -232,7 +232,7 @@ value:
             type: javascript
             expr: "'tag'"
     - id: laya_decide_tag
-      summary: "LLM call: decide tags (Laya)"
+      summary: "Laya call: decide tags"
       value:
         type: script
         path: f/paperless_chain/laya_decide
