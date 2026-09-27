@@ -24,17 +24,32 @@ def main(
     query_vector = vectors[0]
 
     with httpx.Client(timeout=60.0) as client:
-        r = client.post(
-            f"{base}/collections/{COLLECTION}/points/search",
-            json={
-                "vector": query_vector,
-                "filter": {"must": [{"key": "type", "match": {"value": entity_type}}]},
-                "limit": top_k,
-                "score_threshold": min_score,
-            },
+        qdrant_url = f"{base}/collections/{COLLECTION}/points/search"
+        qdrant_body = {
+            "vector": query_vector,
+            "filter": {"must": [{"key": "type", "match": {"value": entity_type}}]},
+            "limit": top_k,
+            "score_threshold": min_score,
+        }
+        print(
+            f"[filter_candidates] POST {qdrant_url}",
+            file=sys.stderr,
+            flush=True,
         )
+        print(
+            f"[filter_candidates] body vector_dim={len(query_vector)} filter={json.dumps(qdrant_body['filter'])} limit={top_k} score_threshold={min_score}",
+            file=sys.stderr,
+            flush=True,
+        )
+        r = client.post(qdrant_url, json=qdrant_body)
         r.raise_for_status()
-        results = r.json().get("result", [])
+        raw = r.json()
+        results = raw.get("result", [])
+        print(
+            f"[filter_candidates] qdrant_response raw_result={json.dumps(raw)}",
+            file=sys.stderr,
+            flush=True,
+        )
 
     candidates = []
     for item in results:
