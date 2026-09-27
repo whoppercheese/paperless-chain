@@ -11,7 +11,8 @@ paperless-chain/
 │   ├── summarize_document.py       # LLM: summary + date
 │   ├── derive_title.py             # LLM: title
 │   ├── filter_candidates.py        # Embedding filter per entity_type
-│   ├── laya_decide.py              # LLM: Laya POST /decide
+│   ├── laya_decide.py              # LLM: Laya POST /decide (correspondent, document_type)
+│   ├── laya_decide_tags.py         # LLM: Laya POST /decide (tags via noul loop)
 │   ├── gate_decision.py            # Confidence gating
 │   ├── save_entity.py              # Create/find Paperless entity
 │   ├── update_paperless.py

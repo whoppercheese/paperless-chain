@@ -232,17 +232,14 @@ value:
             type: javascript
             expr: "'tag'"
     - id: laya_decide_tag
-      summary: "Laya call: decide tags"
+      summary: "Laya call: decide tags (noul loop per candidate)"
       value:
         type: script
-        path: f/paperless_chain/laya_decide
+        path: f/paperless_chain/laya_decide_tags
         input_transforms:
           summary:
             type: javascript
             expr: results.summarize.summary
-          entity_type:
-            type: javascript
-            expr: "'tag'"
           candidates:
             type: javascript
             expr: results.filter_candidates_tag.candidates

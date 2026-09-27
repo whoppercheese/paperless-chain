@@ -1,0 +1,20 @@
+summary: Decide tags via per-candidate noul Laya calls
+description: For each tag candidate, send an individual noul request to Laya asking whether the tag fits the document. Tags with probability > 0.5 are selected.
+lock: ''
+kind: script
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  properties:
+    doc_id:
+      type: integer
+    summary:
+      type: string
+    candidates:
+      type: array
+      items:
+        type: object
+  required:
+    - doc_id
+    - summary
+    - candidates

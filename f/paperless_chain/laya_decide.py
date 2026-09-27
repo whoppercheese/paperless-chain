@@ -3,6 +3,8 @@ import os
 
 import httpx
 
+from f.paperless_chain.shared.prompts import build_laya_choice_instructions
+
 
 def main(
     summary: str,
@@ -11,6 +13,11 @@ def main(
     doc_id: int,
 ) -> dict:
     url = os.environ["LAYA_URL"].rstrip("/")
+
+    if entity_type == "tag":
+        return {
+            "error": "Tag-Decision wird über laya_decide_tags.py (noul-Loop) entschieden.",
+        }
 
     if not candidates:
         return {
@@ -23,24 +30,10 @@ def main(
     criteria = {c["name"]: c["description"] for c in candidates}
     criteria_list = "\n".join(f"- {n}: {d}" for n, d in criteria.items())
 
-    if entity_type == "tag":
-        instructions = (
-            "Welche Tags passen zum Dokument? Wähle den am besten passenden "
-            "Tag aus den Kandidaten. Es kann nur EIN Tag gewählt werden.\n"
-            f"Kandidaten:\n{criteria_list}"
-        )
-    elif entity_type == "correspondent":
-        instructions = (
-            "Welcher Korrespondent passt zum Dokument? Wähle einen aus den "
-            f"Kandidaten.\nKandidaten:\n{criteria_list}"
-        )
-    elif entity_type == "document_type":
-        instructions = (
-            "Welcher Dokumenttyp passt zum Dokument? Wähle einen aus den "
-            f"Kandidaten.\nKandidaten:\n{criteria_list}"
-        )
-    else:
-        return {"error": f"Unknown entity_type: {entity_type}"}
+    try:
+        instructions = build_laya_choice_instructions(entity_type, criteria_list)
+    except ValueError as e:
+        return {"error": str(e)}
 
     questions = {
         "decision": {
@@ -71,19 +64,12 @@ def main(
     decision = answers.get("decision", {})
     probabilities = decision.get("probabilities", {}) or {}
 
-    if entity_type == "tag":
-        selected = sorted(
-            ({"name": n, "confidence": c} for n, c in probabilities.items() if c and c > 0),
-            key=lambda x: x["confidence"],
-            reverse=True,
-        )
+    choice_name = decision.get("choice")
+    confidence = probabilities.get(choice_name, 0.0) if choice_name else 0.0
+    if choice_name and confidence > 0:
+        selected = [{"name": choice_name, "confidence": confidence}]
     else:
-        choice_name = decision.get("choice")
-        confidence = probabilities.get(choice_name, 0.0) if choice_name else 0.0
-        if choice_name and confidence > 0:
-            selected = [{"name": choice_name, "confidence": confidence}]
-        else:
-            selected = []
+        selected = []
 
     result = {
         "doc_id": doc_id,
@@ -99,13 +85,11 @@ def main(
 if __name__ == "__main__":
     print(main(
         summary="Rechnung von Amazon über 99,99 EUR für电子产品",
-        entity_type="tag",
+        entity_type="document_type",
         doc_id=1,
         candidates=[
-            {"name": "Rechnung", "description": "Für Rechnungen und Mahnungen"},
-            {"name": "Versicherung", "description": "Für Versicherungsdokumente"},
-            {"name": "Vertrag", "description": "Für Verträge und Vereinbarungen"},
-            {"name": "Wichtig", "description": "Für wichtige Dokumente"},
-            {"name": "Bezahlt", "description": "Für bezahlte Dokumente"},
+            {"name": "Rechnung", "description": "Rechnungen und Mahnungen"},
+            {"name": "Vertrag", "description": "Verträge und Vereinbarungen"},
+            {"name": "Sonstiges", "description": "Alles andere"},
         ],
     ))

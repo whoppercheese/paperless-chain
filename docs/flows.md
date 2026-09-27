@@ -57,7 +57,7 @@ flowchart TB
 | save_entity_correspondent | `save_entity` | Create/find correspondent in Paperless |
 | apply_warning_correspondent | `apply_status_tags` | AI-Warning tag if rejected |
 | filter_candidates_tag | `filter_candidates` | Embedding filter for tags |
-| laya_decide_tag | `laya_decide` | **LLM 5:** Decide tags |
+| laya_decide_tag | `laya_decide_tags` | **LLM 5:** Decide tags (noul loop per candidate) |
 | gate_decision_tag | `gate_decision` | Confidence gate for tags |
 | save_entity_tag | `save_entity` | Apply tags in Paperless |
 | apply_warning_tag | `apply_status_tags` | AI-Warning tag if rejected |

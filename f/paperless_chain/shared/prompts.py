@@ -130,3 +130,25 @@ REGELN:
 5. Keine Überschneidungen. Zusammen decken die Chunks den gesamten relevanten Inhalt ab.
 6. Keine Zusammenfassung erzeugen — die wird separat gespeichert.
 7. Kurze Dokumente: 1 Chunk. Längere: typisch 2-5 Chunks."""
+
+
+def build_laya_choice_instructions(entity_type: str, criteria_list: str) -> str:
+    if entity_type == "correspondent":
+        return (
+            "Welcher Korrespondent passt zum Dokument? Wähle einen aus den "
+            f"Kandidaten.\nKandidaten:\n{criteria_list}"
+        )
+    if entity_type == "document_type":
+        return (
+            "Welcher Dokumenttyp passt zum Dokument? Wähle einen aus den "
+            f"Kandidaten.\nKandidaten:\n{criteria_list}"
+        )
+    raise ValueError(f"Unsupported entity_type for laya choice: {entity_type}")
+
+
+def build_laya_tag_noul_instructions(tag_name: str, tag_description: str) -> str:
+    description = tag_description.strip() or "(keine Beschreibung hinterlegt)"
+    return (
+        f"Passt der Tag '{tag_name}' zu diesem Dokument in einer strukturierten "
+        f"Dokumentenverwaltung? Tag-Beschreibung: {description}"
+    )
