@@ -36,13 +36,16 @@ def main(
 
     candidates = []
     for item in results:
+        payload = item.get("payload") or {}
+        if not payload:
+            continue
         candidates.append({
             "id": item["id"],
-            "name": item["payload"]["name"],
-            "type": item["payload"]["type"],
-            "paperless_id": item["payload"]["paperless_id"],
-            "description": item["payload"]["description"],
-            "score": item["score"],
+            "name": payload.get("name", ""),
+            "type": payload.get("type", ""),
+            "paperless_id": payload.get("paperless_id"),
+            "description": payload.get("description", ""),
+            "score": item.get("score", 0.0),
         })
 
     return {
