@@ -77,35 +77,6 @@ def chat_json(
         raise ValueError(f"Could not parse JSON from model response: {text[:500]}")
 
 
-def chat(
-    system: str,
-    user: str,
-    model: str | None = None,
-    temperature: float = 0,
-) -> str:
-    url = os.environ["LLM_URL"].rstrip("/")
-    model = model or os.environ.get("LLM_MODEL", "qwen3")
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        "stream": False,
-        "think": False,
-        "options": {"temperature": temperature},
-    }
-    _log_llm_request(model, system, user, temperature)
-    with httpx.Client(timeout=_chat_timeout()) as client:
-        response = client.post(f"{url}/api/chat", json=payload)
-        response.raise_for_status()
-        data = response.json()
-
-    text = ((data.get("message") or {}).get("content") or "").strip()
-    _log_llm_response(text)
-    return text
-
-
 def embed_texts(texts: list[str], model: str | None = None) -> list[list[float]]:
     if not texts:
         return []

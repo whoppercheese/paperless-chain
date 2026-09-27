@@ -18,30 +18,6 @@ TITLE_SCHEMA = {
     "required": ["title"],
 }
 
-DOCUMENT_TYPE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "document_type": {"type": "string"},
-    },
-    "required": ["document_type"],
-}
-
-CORRESPONDENT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "correspondent": {"type": "string"},
-    },
-    "required": ["correspondent"],
-}
-
-TAGS_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "tags": {"type": "array", "items": {"type": "string"}},
-    },
-    "required": ["tags"],
-}
-
 CHUNK_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -127,109 +103,9 @@ TITEL:
 {_json_schema_instruction(TITLE_SCHEMA)}"""
 
 
-def build_resolve_document_type_prompt(document_language: str) -> str:
-    lang = document_language
-    return f"""\
-Du bestimmst den Dokumenttyp für ein Dokument in Paperless-ngx.
-Die Dokumentsprache laut Paperless ist: {lang}.
-Im User-Prompt erhältst du nur die Summary — nicht den Volltext.
-Der Typ wird als neuer Eintrag in Paperless angelegt.
-Antworte als JSON.
-
-SPRACHE (PFLICHT):
-- document_type MUSS vollständig in der Dokumentsprache ({lang}) verfasst sein.
-- NIEMALS in einer anderen Sprache antworten — auch nicht teilweise.
-
-DOKUMENTTYP:
-- document_type: passender Dokumenttyp auf {lang}
-- Kurzer generischer Typ (z.B. Rechnung, Vertrag, Kontoauszug, Brief)
-- Synonyme und Abkürzungen in die Dokumentsprache überführen (z.B. Invoice → Rechnung, KTO-Auszug → Kontoauszug)
-- Nicht zu spezifisch: keine Rechnungsnummern, keine Datumsangaben, keine Beträge im Namen
-- Der Typ muss klar zum Inhalt der Summary passen
-
-{_json_schema_instruction(DOCUMENT_TYPE_SCHEMA)}"""
-
-
-def build_resolve_correspondent_prompt(document_language: str) -> str:
-    lang = document_language
-    return f"""\
-Du bestimmst den Korrespondenten (Absender) für ein Dokument in Paperless-ngx.
-Die Dokumentsprache laut Paperless ist: {lang}.
-Im User-Prompt erhältst du nur die Summary — nicht den Volltext.
-Der Korrespondent wird als neuer Eintrag in Paperless angelegt.
-Antworte als JSON.
-
-SPRACHE (PFLICHT):
-- correspondent MUSS vollständig in der Dokumentsprache ({lang}) verfasst sein.
-- NIEMALS in einer anderen Sprache antworten — auch nicht teilweise.
-- Eigennamen und Firmennamen unverändert übernehmen.
-
-KORRESPONDENT:
-- correspondent: Absender aus der Summary
-- Möglichst kurzer Kernname
-- Nur der Kernname: keine Rechtsformen (GmbH, AG, Inc., Ltd. etc.), keine Domains (.com), keine Zusätze
-- Beispiel: "Amazon.com, Inc." → "Amazon"; "Deutsche Telekom AG" → "Deutsche Telekom"
-- Bei Personen: Vor- und Nachname, ohne Anrede oder Titel
-- Keine Adressen, keine E-Mail-Adressen
-
-{_json_schema_instruction(CORRESPONDENT_SCHEMA)}"""
-
-
-def build_resolve_tags_prompt(document_language: str) -> str:
-    lang = document_language
-    return f"""\
-Du bestimmst passende Tags für ein Dokument in Paperless-ngx.
-Die Dokumentsprache laut Paperless ist: {lang}.
-Im User-Prompt erhältst du nur die Summary — nicht den Volltext.
-Antworte als JSON.
-
-SPRACHE (PFLICHT):
-- Jeder Tag MUSS vollständig in der Dokumentsprache ({lang}) verfasst sein.
-- NIEMALS in einer anderen Sprache antworten.
-
-TAGS:
-- tags: Array von passenden Tags auf {lang}
-- Kurze, generische Tags (1-3 Wörter)
-- Tags wie: bezahlt, unbearbeitet, wichtig, Rechnung, Vertrag, Mahnung, Kündigung, Versicherung, Steuer, etc.
-- Nur wirklich zutreffende Tags — keine Vermutungen
-- Maximal 5 Tags
-
-{_json_schema_instruction(TAGS_SCHEMA)}"""
-
-
 def build_derive_title_user_prompt(doc_id: int, summary: str) -> str:
     return f"""\
 Leite aus der folgenden Summary einen Titel ab.
-
-Dokument-ID: {doc_id}
-
-Summary:
-{summary.strip()}"""
-
-
-def build_resolve_document_type_user_prompt(doc_id: int, summary: str) -> str:
-    return f"""\
-Bestimme den Dokumenttyp aus der folgenden Summary.
-
-Dokument-ID: {doc_id}
-
-Summary:
-{summary.strip()}"""
-
-
-def build_resolve_correspondent_user_prompt(doc_id: int, summary: str) -> str:
-    return f"""\
-Bestimme den Korrespondenten aus der folgenden Summary.
-
-Dokument-ID: {doc_id}
-
-Summary:
-{summary.strip()}"""
-
-
-def build_resolve_tags_user_prompt(doc_id: int, summary: str) -> str:
-    return f"""\
-Bestimme passende Tags aus der folgenden Summary.
 
 Dokument-ID: {doc_id}
 

@@ -69,42 +69,231 @@ value:
           document_language:
             type: javascript
             expr: results.fetch.document_language
-    - id: resolve_document_type
-      summary: Resolve document type using Laya decision model
+    - id: filter_candidates_document_type
+      summary: Filter document type candidates by embedding similarity
       value:
-        type: flow
-        path: f/paperless_chain/resolve_document_type
+        type: script
+        path: f/paperless_chain/filter_candidates
+        input_transforms:
+          summary:
+            type: javascript
+            expr: results.summarize.summary
+          entity_type:
+            type: javascript
+            expr: "'document_type'"
+    - id: laya_decide_document_type
+      summary: "LLM call: decide document type (Laya)"
+      value:
+        type: script
+        path: f/paperless_chain/laya_decide
+        input_transforms:
+          summary:
+            type: javascript
+            expr: results.summarize.summary
+          entity_type:
+            type: javascript
+            expr: "'document_type'"
+          candidates:
+            type: javascript
+            expr: results.filter_candidates_document_type.candidates
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+    - id: gate_decision_document_type
+      summary: Gate document type decision by confidence
+      value:
+        type: script
+        path: f/paperless_chain/gate_decision
         input_transforms:
           doc_id:
             type: javascript
             expr: results.fetch.doc_id
-          summary:
+          entity_type:
             type: javascript
-            expr: results.summarize.summary
-    - id: resolve_correspondent
-      summary: Resolve correspondent using Laya decision model
+            expr: "'document_type'"
+          selected:
+            type: javascript
+            expr: results.laya_decide_document_type.selected
+          candidates:
+            type: javascript
+            expr: results.laya_decide_document_type.candidates
+    - id: save_entity_document_type
+      summary: Save document type to Paperless if new
       value:
-        type: flow
-        path: f/paperless_chain/resolve_correspondent
+        type: script
+        path: f/paperless_chain/save_entity
         input_transforms:
           doc_id:
             type: javascript
             expr: results.fetch.doc_id
-          summary:
+          entity_type:
             type: javascript
-            expr: results.summarize.summary
-    - id: resolve_tags
-      summary: Resolve tags using Laya decision model
+            expr: "'document_type'"
+          accepted:
+            type: javascript
+            expr: results.gate_decision_document_type.accepted
+    - id: apply_warning_document_type
+      summary: Apply AI-Warning tag if document type was rejected
       value:
-        type: flow
-        path: f/paperless_chain/resolve_tags
+        type: script
+        path: f/paperless_chain/apply_status_tags
         input_transforms:
           doc_id:
             type: javascript
             expr: results.fetch.doc_id
+          update_warnings:
+            type: javascript
+            expr: results.gate_decision_document_type.warnings
+    - id: filter_candidates_correspondent
+      summary: Filter correspondent candidates by embedding similarity
+      value:
+        type: script
+        path: f/paperless_chain/filter_candidates
+        input_transforms:
           summary:
             type: javascript
             expr: results.summarize.summary
+          entity_type:
+            type: javascript
+            expr: "'correspondent'"
+    - id: laya_decide_correspondent
+      summary: "LLM call: decide correspondent (Laya)"
+      value:
+        type: script
+        path: f/paperless_chain/laya_decide
+        input_transforms:
+          summary:
+            type: javascript
+            expr: results.summarize.summary
+          entity_type:
+            type: javascript
+            expr: "'correspondent'"
+          candidates:
+            type: javascript
+            expr: results.filter_candidates_correspondent.candidates
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+    - id: gate_decision_correspondent
+      summary: Gate correspondent decision by confidence
+      value:
+        type: script
+        path: f/paperless_chain/gate_decision
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+          entity_type:
+            type: javascript
+            expr: "'correspondent'"
+          selected:
+            type: javascript
+            expr: results.laya_decide_correspondent.selected
+          candidates:
+            type: javascript
+            expr: results.laya_decide_correspondent.candidates
+    - id: save_entity_correspondent
+      summary: Save correspondent to Paperless if new
+      value:
+        type: script
+        path: f/paperless_chain/save_entity
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+          entity_type:
+            type: javascript
+            expr: "'correspondent'"
+          accepted:
+            type: javascript
+            expr: results.gate_decision_correspondent.accepted
+    - id: apply_warning_correspondent
+      summary: Apply AI-Warning tag if correspondent was rejected
+      value:
+        type: script
+        path: f/paperless_chain/apply_status_tags
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+          update_warnings:
+            type: javascript
+            expr: results.gate_decision_correspondent.warnings
+    - id: filter_candidates_tag
+      summary: Filter tag candidates by embedding similarity
+      value:
+        type: script
+        path: f/paperless_chain/filter_candidates
+        input_transforms:
+          summary:
+            type: javascript
+            expr: results.summarize.summary
+          entity_type:
+            type: javascript
+            expr: "'tag'"
+    - id: laya_decide_tag
+      summary: "LLM call: decide tags (Laya)"
+      value:
+        type: script
+        path: f/paperless_chain/laya_decide
+        input_transforms:
+          summary:
+            type: javascript
+            expr: results.summarize.summary
+          entity_type:
+            type: javascript
+            expr: "'tag'"
+          candidates:
+            type: javascript
+            expr: results.filter_candidates_tag.candidates
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+    - id: gate_decision_tag
+      summary: Gate tag decision by confidence
+      value:
+        type: script
+        path: f/paperless_chain/gate_decision
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+          entity_type:
+            type: javascript
+            expr: "'tag'"
+          selected:
+            type: javascript
+            expr: results.laya_decide_tag.selected
+          candidates:
+            type: javascript
+            expr: results.laya_decide_tag.candidates
+    - id: save_entity_tag
+      summary: Save tags to Paperless if new
+      value:
+        type: script
+        path: f/paperless_chain/save_entity
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+          entity_type:
+            type: javascript
+            expr: "'tag'"
+          accepted:
+            type: javascript
+            expr: results.gate_decision_tag.accepted
+    - id: apply_warning_tag
+      summary: Apply AI-Warning tag if tags were rejected
+      value:
+        type: script
+        path: f/paperless_chain/apply_status_tags
+        input_transforms:
+          doc_id:
+            type: javascript
+            expr: results.fetch.doc_id
+          update_warnings:
+            type: javascript
+            expr: results.gate_decision_tag.warnings
     - id: update
       summary: Update Paperless metadata
       value:
@@ -119,7 +308,7 @@ value:
             expr: results.derive_title.title
           selected_correspondent:
             type: javascript
-            expr: "(results.resolve_correspondent?.saved || [])[0]"
+            expr: "(results.save_entity_correspondent?.saved || [])[0]"
           existing_tags:
             type: javascript
             expr: results.fetch.existing_tags
@@ -134,7 +323,7 @@ value:
             expr: results.fetch.existing_document_types
           selected_document_type:
             type: javascript
-            expr: "(results.resolve_document_type?.saved || [])[0]"
+            expr: "(results.save_entity_document_type?.saved || [])[0]"
           document_date:
             type: javascript
             expr: results.summarize.document_date
@@ -154,21 +343,21 @@ value:
             type: javascript
             expr: >-
               [...(results.derive_title.warnings || []),
-              ...(results.resolve_document_type?.warnings || []),
-              ...(results.resolve_correspondent?.warnings || []),
-              ...(results.resolve_tags?.warnings || [])]
+              ...(results.gate_decision_document_type.warnings || []),
+              ...(results.gate_decision_correspondent.warnings || []),
+              ...(results.gate_decision_tag.warnings || [])]
           selected_tags:
             type: javascript
-            expr: results.resolve_tags?.saved
+            expr: results.save_entity_tag?.saved
           created_document_type:
             type: javascript
-            expr: "(results.resolve_document_type?.created || [])[0]"
+            expr: "(results.save_entity_document_type?.created || [])[0]"
           created_correspondent:
             type: javascript
-            expr: "(results.resolve_correspondent?.created || [])[0]"
+            expr: "(results.save_entity_correspondent?.created || [])[0]"
           created_tags:
             type: javascript
-            expr: results.resolve_tags?.created
+            expr: results.save_entity_tag?.created
     - id: chunk
       summary: LLM semantic chunking
       value:

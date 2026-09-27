@@ -3,32 +3,36 @@
 ```
 paperless-chain/
 ├── f/paperless_chain/
-│   ├── process_document.flow/     # Main flow (webhook)
-│   ├── embed_document.flow/       # Embedding only
-│   ├── preprocess_webhook.py      # doc_url → doc_id
+│   ├── process_document.flow/      # Main flow (webhook + batch)
+│   ├── embed_document.flow/        # Embedding only
+│   ├── process_entity_sync.flow/   # Periodic Paperless → Qdrant entity sync
+│   ├── preprocess_webhook.py       # doc_url → doc_id
 │   ├── fetch_document.py
-│   ├── summarize_document.py
-│   ├── derive_title.py
-│   ├── resolve_document_type.py
-│   ├── resolve_correspondent.py
+│   ├── summarize_document.py       # LLM: summary + date
+│   ├── derive_title.py             # LLM: title
+│   ├── filter_candidates.py        # Embedding filter per entity_type
+│   ├── laya_decide.py              # LLM: Laya POST /decide
+│   ├── gate_decision.py            # Confidence gating
+│   ├── save_entity.py              # Create/find Paperless entity
 │   ├── update_paperless.py
-│   ├── chunk_document.py
+│   ├── chunk_document.py           # LLM: semantic chunks
 │   ├── generate_embeddings.py
 │   ├── store_qdrant.py
-│   ├── apply_status_tags.py       # AI-Warning
-│   ├── apply_embedded_tag.py      # AI-Embedded
-│   ├── handle_flow_failure.py     # AI-Error
+│   ├── apply_status_tags.py        # AI-Warning
+│   ├── apply_embedded_tag.py       # AI-Embedded
+│   ├── handle_flow_failure.py      # AI-Error
 │   ├── notify.py
-│   ├── queue_documents_by_tag.py  # Batch → process_document
-│   ├── queue_embeddings_by_tag.py # Batch → embed_document
+│   ├── queue_documents_by_tag.py   # Batch → process_document
+│   ├── queue_embeddings_by_tag.py  # Batch → embed_document
+│   ├── sync_entity_embeddings.py   # process_entity_sync body
 │   └── shared/
-│       ├── ollama_client.py
+│       ├── llm_client.py           # Ollama chat_json + embed_texts
 │       ├── paperless_client.py
 │       ├── windmill_client.py
 │       ├── notify_client.py
-│       ├── prompts.py
+│       ├── prompts.py              # SUMMARY/TITLE/CHUNK schema + builders
 │       └── text_utils.py
-├── search/                        # Search UI (FastAPI + HTMX)
+├── search/                         # Search UI (FastAPI + HTMX)
 ├── docker-compose.yml
 ├── wmill.yaml / wmill-lock.yaml
 ├── wmill-sync.sh
@@ -51,7 +55,6 @@ System tags are ignored by the LLM when selecting tags (`text_utils.SYSTEM_TAG_N
 ## Qdrant chunk structure
 
 Partial chunk:
-
 ```json
 {
   "vector": [0.1, 0.2, "..."],

@@ -11,12 +11,13 @@ flowchart TB
     P1["Webhook: doc_url → doc_id"] --> P2["fetch"]
     P2 --> P3["summarize"]
     P3 --> P4["derive_title"]
-    P4 --> P5["resolve_document_type*"]
-    P5 --> P6["resolve_correspondent*"]
-    P6 --> P7["update_paperless"]
-    P7 --> P8["chunk → embed → store"]
-    P8 --> P9["apply_status_tags"]
-    P9 --> P10["notify"]
+    P4 --> P5["filter_candidates_document_type → laya_decide_document_type → gate_decision_document_type → save_entity_document_type → apply_warning_document_type"]
+    P5 --> P6["filter_candidates_correspondent → laya_decide_correspondent → gate_decision_correspondent → save_entity_correspondent → apply_warning_correspondent"]
+    P6 --> P7["filter_candidates_tag → laya_decide_tag → gate_decision_tag → save_entity_tag → apply_warning_tag"]
+    P7 --> P8["update_paperless"]
+    P8 --> P9["chunk → embed → store"]
+    P9 --> P10["apply_status_tags"]
+    P10 --> P11["notify"]
   end
 
   subgraph embed ["embed_document — Embedding only"]
@@ -45,10 +46,23 @@ flowchart TB
 | fetch | `fetch_document` | OCR text, language, existing tags/types/correspondents |
 | summarize | `summarize_document` | **LLM 1:** Summary + `document_date` from full text |
 | derive_title | `derive_title` | **LLM 2:** Title from summary |
-| resolve_document_type | `resolve_document_type` | **LLM 3:** Document type (skip if set) |
-| resolve_correspondent | `resolve_correspondent` | **LLM 4:** Correspondent (skip if set) |
+| filter_candidates_document_type | `filter_candidates` | Embedding filter for document type |
+| laya_decide_document_type | `laya_decide` | **LLM 3:** Decide document type |
+| gate_decision_document_type | `gate_decision` | Confidence gate for document type |
+| save_entity_document_type | `save_entity` | Create/find document type in Paperless |
+| apply_warning_document_type | `apply_status_tags` | AI-Warning tag if rejected |
+| filter_candidates_correspondent | `filter_candidates` | Embedding filter for correspondent |
+| laya_decide_correspondent | `laya_decide` | **LLM 4:** Decide correspondent |
+| gate_decision_correspondent | `gate_decision` | Confidence gate for correspondent |
+| save_entity_correspondent | `save_entity` | Create/find correspondent in Paperless |
+| apply_warning_correspondent | `apply_status_tags` | AI-Warning tag if rejected |
+| filter_candidates_tag | `filter_candidates` | Embedding filter for tags |
+| laya_decide_tag | `laya_decide` | **LLM 5:** Decide tags |
+| gate_decision_tag | `gate_decision` | Confidence gate for tags |
+| save_entity_tag | `save_entity` | Apply tags in Paperless |
+| apply_warning_tag | `apply_status_tags` | AI-Warning tag if rejected |
 | update | `update_paperless` | PATCH Paperless; sets `AI-Processed` |
-| chunk | `chunk_document` | **LLM 5:** Semantic chunks + summary chunk |
+| chunk | `chunk_document` | **LLM 6:** Semantic chunks + summary chunk |
 | embed | `generate_embeddings` | Vectors via Ollama/bge-m3 |
 | store | `store_qdrant` | Upsert into Qdrant |
 | status_tag | `apply_status_tags` | `AI-Warning` on warnings |
@@ -59,10 +73,10 @@ flowchart TB
 ### LLM behavior
 
 - Summary + date from **full text**; fallback for date: Paperless added date
-- Title, document type, correspondent from **summary**
+- Title from **summary**
+- Entity decisions (type/correspondent/tags) use **candidate filtering by embedding** + LLM decides among candidates
 - Chunking from **full text** + summary chunk for embedding
 - Metadata only from existing Paperless lists (type/correspondent may be created new)
-- Content tags: LLM checks existing tags, may remove unsuitable ones and add suitable ones
 - System tags (`AI-Warning`, `AI-Error`, `AI-Processed`, `AI-Embedded`) are ignored by the LLM
 
 ### Start manually
@@ -102,6 +116,16 @@ wmill flow run f/paperless_chain/embed_document \
   -d '{"doc_id": 42}'
 ```
 
+## `process_entity_sync`
+
+**Trigger:** Scheduled every 5 minutes.
+
+**Purpose:** Sync Paperless tags, correspondents and document types to Qdrant entity_embeddings for candidate filtering.
+
+| Step | Script | Description |
+|------|--------|-------------|
+| sync | `sync_entity_embeddings` | Diff Paperless ↔ Qdrant, add/remove entities, notify on additions |
+
 ## Which flow when?
 
 | Scenario | Flow |
@@ -110,5 +134,6 @@ wmill flow run f/paperless_chain/embed_document \
 | Retroactively add AI metadata to existing docs | `process_document` (batch queue) |
 | Update Qdrant only, leave metadata untouched | `embed_document` |
 | Re-embed after model change | `embed_document` (batch queue) |
+| Keep entity embeddings in sync with Paperless | `process_entity_sync` (schedule) |
 
 Batch details: [batch-processing.md](batch-processing.md)
