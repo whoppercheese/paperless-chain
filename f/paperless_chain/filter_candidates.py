@@ -1,4 +1,6 @@
+import json
 import os
+import sys
 
 import httpx
 
@@ -47,6 +49,18 @@ def main(
             "description": payload.get("description", ""),
             "score": item.get("score", 0.0),
         })
+
+    print(
+        f"[filter_candidates] entity_type={entity_type} count={len(candidates)} top_k={top_k} min_score={min_score}",
+        file=sys.stderr,
+        flush=True,
+    )
+    for c in candidates:
+        print(
+            f"[filter_candidates]   - name={c['name']!r} score={c['score']:.4f} description={c['description']!r}",
+            file=sys.stderr,
+            flush=True,
+        )
 
     return {
         "entity_type": entity_type,
