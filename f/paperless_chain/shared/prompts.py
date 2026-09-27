@@ -146,9 +146,17 @@ def build_laya_choice_instructions(entity_type: str, criteria_list: str) -> str:
     raise ValueError(f"Unsupported entity_type for laya choice: {entity_type}")
 
 
-def build_laya_tag_noul_instructions(tag_name: str, tag_description: str) -> str:
-    description = tag_description.strip() or "(keine Beschreibung hinterlegt)"
+def build_laya_tag_choice_instructions(tag_name: str, tag_description: str) -> str:
+    description = tag_description.strip() or "Keine Beschreibung hinterlegt."
     return (
-        f"Passt der Tag '{tag_name}' zu diesem Dokument in einer strukturierten "
-        f"Dokumentenverwaltung? Tag-Beschreibung: {description}"
+        "Passt der folgende Tag sinnvoll zum Inhalt dieses Dokuments und sollte in einer strukturierten "
+        f"Dokumentenverwaltung unbedingt für dieses Dokument verwendet werden? Tag: {tag_name}\nTag-Beschreibung: {description}\n"
     )
+
+
+def build_laya_tag_choice_criteria(tag_name: str, tag_description: str) -> dict:
+    description = tag_description.strip() or "Keine Beschreibung hinterlegt."
+    return {
+        "yes": "Tag passt sinnvoll zum Dokument",
+        "no": "Tag passt nicht zum Dokument",
+    }

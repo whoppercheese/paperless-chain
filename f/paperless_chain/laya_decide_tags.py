@@ -3,42 +3,48 @@ import os
 
 import httpx
 
-from f.paperless_chain.shared.prompts import build_laya_tag_noul_instructions
+from f.paperless_chain.shared.prompts import (
+    build_laya_tag_choice_criteria,
+    build_laya_tag_choice_instructions,
+)
 
-NOUL_THRESHOLD = 0.5
+YES_THRESHOLD = 0.5
 
 
-def _ask_laya_noul(
+def _ask_laya_tag_choice(
     client: httpx.Client,
     url: str,
     summary: str,
     tag_name: str,
     tag_description: str,
-) -> float:
-    instructions = build_laya_tag_noul_instructions(tag_name, tag_description)
+) -> tuple[str, float]:
     payload = {
         "context": summary,
         "questions": {
             "decision": {
-                "type": "noul",
-                "instructions": instructions,
+                "type": "choice",
+                "instructions": build_laya_tag_choice_instructions(tag_name, tag_description),
+                "criteria": build_laya_tag_choice_criteria(tag_name, tag_description),
             }
         },
     }
 
-    print(f"=== Laya noul Request: tag='{tag_name}' ===")
+    print(f"=== Laya tag-choice Request: tag='{tag_name}' ===")
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
     r = client.post(f"{url}/decide", json=payload)
     r.raise_for_status()
     response = r.json()
 
-    print(f"=== Laya noul Response: tag='{tag_name}' ===")
+    print(f"=== Laya tag-choice Response: tag='{tag_name}' ===")
     print(json.dumps(response, ensure_ascii=False, indent=2))
 
-    answers = response.get("answers", {}) or {}
-    decision = answers.get("decision", {}) or {}
-    return float(decision.get("noul", 0.0) or 0.0)
+    decision = response.get("answers", {}).get("decision", {}) or {}
+    choice = decision.get("choice")
+    answer_confidence = float(decision.get("answer_confidence", 0.0) or 0.0)
+    if not choice:
+        return "", 0.0
+    return str(choice), answer_confidence
 
 
 def main(
@@ -58,7 +64,7 @@ def main(
             "warnings": ["Keine Tag-Kandidaten vorhanden"],
         }
 
-    raw_response: dict[str, float] = {}
+    raw_response: dict[str, dict] = {}
     warnings: list[str] = []
 
     with httpx.Client(timeout=120.0) as client:
@@ -68,7 +74,7 @@ def main(
                 continue
             description = candidate.get("description", "")
             try:
-                p_true = _ask_laya_noul(
+                choice, confidence = _ask_laya_tag_choice(
                     client=client,
                     url=url,
                     summary=summary,
@@ -77,14 +83,15 @@ def main(
                 )
             except Exception as e:
                 warnings.append(f"Laya-Aufruf für Tag '{name}' fehlgeschlagen: {e}")
-                p_true = 0.0
-            raw_response[name] = p_true
+                choice, confidence = "", 0.0
+            raw_response[name] = {"choice": choice, "answer_confidence": confidence}
 
     selected = sorted(
         (
-            {"name": n, "confidence": c}
-            for n, c in raw_response.items()
-            if c > NOUL_THRESHOLD
+            {"name": n, "confidence": raw_response[n]["answer_confidence"]}
+            for n in raw_response
+            if raw_response[n]["choice"] == "yes"
+            and raw_response[n]["answer_confidence"] >= YES_THRESHOLD
         ),
         key=lambda x: x["confidence"],
         reverse=True,
