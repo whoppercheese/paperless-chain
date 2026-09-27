@@ -30,6 +30,7 @@ def main(
             "filter": {"must": [{"key": "type", "match": {"value": entity_type}}]},
             "limit": top_k,
             "score_threshold": min_score,
+            "with_payload": True,
         }
         print(
             f"[filter_candidates] POST {qdrant_url}",
